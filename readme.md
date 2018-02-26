@@ -1,6 +1,6 @@
 # Udacity Course: Interactive 3D Graphics with WebGl and three.js
 
-(wiki)[https://www.udacity.com/wiki/cs291?nocache#!#five-great-tips]
+[wiki](https://www.udacity.com/wiki/cs291?nocache#!#five-great-tips)
 
 ## Leeson 1: Introduction
 
