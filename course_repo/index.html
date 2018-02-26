@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #F5F5F5;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#container {
+				height: 492px;
+				width: 876px;
+			}
+		</style>
+		<script src="lib/jquery-1.8.3.min.js"></script>
+		<script src="lib/three.min.js"></script>
+		<script src="lib/Detector.js"></script>
+		<script src="lib/Coordinates.js"></script>
+		<script src="lib/OrbitAndPanControls.js"></script>
+		<script src="lib/TrackballControls.js"></script>
+		<script src="lib/uclass_TeapotGeometry.js"></script>
+		<script src="lib/uclass_TeacupGeometry.js"></script>
+		<script src="lib/uclass_TeaspoonGeometry.js"></script>
+		<script src="lib/uclass_BeveledBlockGeometry.js"></script>
+		<script src="lib/uclass_shaders.js"></script>
+		<script src="lib/stats.min.js"></script>
+		<script src="lib/dat.gui.min.js"></script>
+		<script src="lib/tween.min.js"></script>
+		<script src="lib/sprintf.js"></script>
+		<script>
+			function getParameterByName(name) {
+			var match = RegExp('[?&]' + name + '=([^&]*)')
+							.exec(window.location.search);
+			return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+			}
+			var loadScript = getParameterByName('load');
+			if ('undefined' !== typeof loadScript) {
+				if ( loadScript !== null ) {
+					var thescript = document.createElement('script');
+					thescript.setAttribute('type','text/javascript');
+					thescript.setAttribute('src',loadScript);
+					document.getElementsByTagName('head')[0].appendChild(thescript);
+				}
+			}
+			else {
+				alert(loadScript);
+			}
+		</script>
+	</head>
+	<body>
+		<div id="container">
+		</div>
+		<script>
+			if ( ! Detector.webgl ) {
+				Detector.addGetWebGLMessage();
+			}
+			else {
+				elem = document.createElement("div");
+				elem.id = 'myID';
+				elem.id = 'myID';
+				elem.innerHTML =
+					['<br><form name="run"><label>&nbsp;Select script:</label>',
+							'<select name="demo"',
+							' OnChange="location.href=run.demo.options[selectedIndex].value">',
+							'	 <option selected>Select demo',
+							'	 	<option value="?load=demo/unit1-fps.js">Lesson 1 FPS',
+							'	 	<option value="?load=demo/unit1-teacup-demo.js">Lesson 1 Teacup',
+							'	 	<option value="?load=demo/unit1-teaspoon-demo.js">Lesson 1 Teaspoon',
+							'	 	<option value="?load=demo/unit1-teapot-demo.js">Lesson 1 Teapot',
+							'	 	<option value="?load=demo/unit1-render-mode-0.js">Lesson 1 Render Mode #0',
+							'	 	<option value="?load=demo/unit1-render-mode-1.js">Lesson 1 Render Mode #1',
+							'	 	<option value="?load=demo/unit1-render-mode-2.js">Lesson 1 Render Mode #2',
+							'	 	<option value="?load=demo/unit2-z-fighting.js">Lesson 2 Z-fighting',
+							'	 	<option value="?load=demo/unit2-z-fighting_fixed.js">Lesson 2 Z-fighting Fixed',
+							'	 	<option value="?load=demo/unit3-color-demo.js">Lesson 3 RGB Color',
+							'	 	<option value="?load=demo/unit3-diffuse-demo.js">Lesson 3 Diffuse',
+							'	 	<option value="?load=demo/unit3-tessellation-demo.js">Lesson 3 Tessellation',
+							'	 	<option value="?load=demo/unit3-lambert-demo.js">Lesson 3 Lambert',
+							'	 	<option value="?load=demo/unit3-teapot-demo.js">Lesson 3 Material Demo',
+							'	 	<option value="?load=demo/unit3-blending.js">Lesson 3 Simple Transparency',
+							'	 	<option value="?load=demo/unit3-over_operator.js">Lesson 3 Over Operator',
+							'	 	<option value="?load=demo/unit3-transparency.js">Lesson 3 Another Transparency Demo',
+							'	 	<option value="?load=demo/unit4-euler_angles.js">Lesson 4 Euler Angles',
+							'	 	<option value="?load=demo/unit4-rotate_then_scale.js">Lesson 4 Rotate Then Scale',
+							'	 	<option value="?load=demo/unit4-robot_arm_demo.js">Lesson 4 Robot Arm',
+							'	 	<option value="?load=demo/unit4-robot_arm_demo_forearm.js">Lesson 4 Robot Forearm',
+							'	 	<option value="?load=demo/unit4-robot_arm_demo_upper_arm.js">Lesson 4 Robot Upper Arm',
+							'		<option value="?load=demo/unit6-fog.js">Lesson 6 Fog',
+							'		<option value="?load=demo/unit7-orthographic-projection.js">Lesson 7 Orthographic',
+							'		<option value="?load=demo/unit7-dolly-and-zoom.js">Lesson 7 Dolly and Zoom',
+							'		<option value="?load=demo/unit7-view-pipeline.js">Lesson 7 View Pipeline',
+							'		<option value="?load=demo/unit8-uv-coordinates.js">Lesson 8 UV Coordinates',
+							'		<option value="?load=demo/unit8-texture-distortion.js">Lesson 8 Texture Distortion',
+							'		<option value="?load=demo/unit8-wrap-mode.js">Lesson 8 Wrap Mode',
+							'		<option value="?load=demo/unit8-texture-magnification.js">Lesson 8 Texture Magnification',
+							'		<option value="?load=demo/unit8-texture-minification.js">Lesson 8 Texture Minification',
+							'		<option value="?load=demo/unit8-mipmapping.js">Lesson 8 Mipmapping',
+							'		<option value="?load=demo/unit8-anisotropy.js">Lesson 8 Anisotropy',
+							'		<option value="?load=demo/unit8-particles.js">Lesson 8 Particles',
+							'		<option value="?load=demo/unit9-fresnel.js">Lesson 9 Fresnel',
+							'		<option value="?load=demo/unit9-energy-balanced.js">Lesson 9 Energy Balanced Blinn-Phong',
+							'		<option value="?load=demo/unit9-gamma.js">Lesson 9 Gamma Correction',
+							'		<option value="?load=demo/unit10-picking.js">Lesson 10 Picking',
+							'		<option value="?load=demo/unit10-constant-vs-timed-steps.js">Lesson 10 Constant vs. Timed Steps',
+							'		<option value="?load=demo/unit10-tweening-demo.js">Lesson 10 Tween Keyframing',
+							'		<option value="?load=demo/unit10-jaunty-hat.js">Lesson 10 Jaunty Hat',
+							'</select>',
+
+							'or',
+							'<select name="exercises"',
+							' OnChange="location.href=run.exercises.options[selectedIndex].value">',
+							'	 <option selected>Select exercise',
+							'	 <option value="?load=unit1/fix-javascript-errors.js">Lesson 1 Problem Set - Fix javascript errors',
+							'	 <option value="?load=unit2/triangle-mesh.js">Lesson 2 - Triangle mesh',
+							'	 <option value="?load=unit2/vertex-order.js">Lesson 2 - Vertex order',
+							'	 <option value="?load=unit2/polygon-creation.js">Lesson 2 Problem Set - Polygon creation',
+							'	 <option value="?load=unit2/polygon-location.js">Lesson 2 Problem Set - Polygon location',
+							'	 <option value="?load=unit2/polygon-radius.js">Lesson 2 Problem Set - Polygon radius',
+							'	 <option value="?load=unit2/create-stairs.js">Lesson 2 Problem Set - Create stairs',
+							'	 <option value="?load=unit2/drinking-bird.js">Lesson 2 Problem Set - Drinking bird',
+							'	 <option value="?load=unit3/vertex-attributes.js">Lesson 3 - Vertex attributes',
+							'	 <option value="?load=unit3/diffuse-material.js">Lesson 3 - Diffuse material',
+							'	 <option value="?load=unit3/smooth-lambert.js">Lesson 3 - Smooth sphere',
+							'	 <option value="?load=unit3/drinking-bird-shiny.js">Lesson 3 Problem Set - Shiny drinking bird',
+							'	 <option value="?load=unit3/drinking-bird-transparency.js">Lesson 3 Problem Set - Transparent drinking bird',
+							'	 <option value="?load=unit4/unit4-rotation_exercise.js">Lesson 4 - Rotate a block',
+							'	 <option value="?load=unit4/unit4-scale_exercise.js">Lesson 4 - Scale a sphere',
+							'	 <option value="?load=unit4/unit4-clock_exercise.js">Lesson 4 - Two clock hands',
+							'	 <option value="?load=unit4/unit4-snowman_exercise.js">Lesson 4 - Snowman',
+							'	 <option value="?load=unit4/unit4-robot_arm_extended_exercise.js">Lesson 4 Problem Set - Extended robot arm',
+							'	 <option value="?load=unit4/unit4-robot_hand_exercise.js">Lesson 4 Problem Set - Robot hand',
+							'	 <option value="?load=unit4/unit4-flower_exercise.js">Lesson 4 Problem Set - Flower',
+							'	 <option value="?load=unit4/unit4-flowersquish_exercise.js">Lesson 4 Problem Set - Improved flower',
+							'	 <option value="?load=unit5/unit5-axis_angle_exercise.js">Lesson 5 - Make an ornament',
+							'	 <option value="?load=unit5/unit5-ps_cylinder_exercise.js">Lesson 5 Problem Set - Cylinder positioning',
+							'	 <option value="?load=unit5/unit5-ps_capsule_exercise.js">Lesson 5 Problem Set - Capsule',
+							'	 <option value="?load=unit5/unit5-ps_helix_exercise.js">Lesson 5 Problem Set - Helices',
+							'	 <option value="?load=unit5/unit5-db_geom_exercise.js">Lesson 5 Problem Set - Drinking bird face',
+							'	<option value="?load=unit6/05-set-a-directional-light.js">Lesson 6 - Set a Directional Light',
+							'	<option value="?load=unit6/08-head-light.js">Lesson 6 - Head light',
+							'	<option value="?load=unit6/10-spot-light.js">Lesson 6 - Spot Light',
+							'	<option value="?load=unit6/14-shadows.js">Lesson 6 - Shadows',
+							'	<option value="?load=unit6/ps-swivel-light-control.js">Lesson 6 Problem Set - Swivel Light',
+							'	<option value="?load=unit6/ps-swivel-and-tilt.js">Lesson 6 Problem Set - Swivel and Tilt',
+							'	<option value="?load=unit7/06-lookat.js">Lesson 7 - Lookat',
+							'	<option value="?load=unit7/12-fov-slider.js">Lesson 7 - FOV slider',
+							'	<option value="?load=unit7/ps-four-viewports.js">Lesson 7 Problem Set - 4 Viewports',
+							'	<option value="?load=unit7/ps-rear-view-camera.js">Lesson 7 Problem Set - Rear View Camera',
+							'	<option value="?load=unit8/05-textured-square.js">Lesson 8 - Textured Square',
+							'	<option value="?load=unit8/particle-grid.js">Lesson 8 - Particle Grid',
+							'	<option value="?load=unit8/ps-pick-a-letter.js">Lesson 8 Problem Set - Pick a Letter',
+							'	<option value="?load=unit8/ps-grassy-plain.js">Lesson 8 Problem Set - Grassy Plain',
+							'	<option value="?load=unit8/ps-specular-mapping.js">Lesson 8 Problem Set - Specular Mapping',
+							'	<option value="?load=unit8/ps-db-tail.js">Lesson 8 Problem Set - DB tail',
+							'	<option value="?load=unit8/ps-reflection-mapping.js">Lesson 8 Problem Set - Reflection Mapping',
+							'   <option value="unit9/two-tone-shading/index.html">Lesson 9 - Two Tone Shading',
+							'   <option value="unit9/procedural-texturing/index.html">Lesson 9 - Procedural texturing',
+							'   <option value="unit9/debugging-shaders/index.html">Lesson 9 - Debugging Shaders',
+							'   <option value="unit9/anisotropic-material/index.html">Lesson 9 - Anisotropic Material',
+							'   <option value="unit9/moving-flashlight/index.html">Lesson 9 - Moving Flashlight',
+							'   <option value="unit9/model-deformation/index.html">Lesson 9 - Model Deformation',
+							'   <option value="unit9/vertex-normal-creation/index.html">Lesson 9 - Vertex Normal Creation',
+							'   <option value="unit9/sharp-specular/index.html">Lesson 9 - Sharp Specular',
+							'   <option value="unit9/wrap-lighting/index.html">Lesson 9 - Wrap Lighting',
+							'	<option value="?load=unit10/08-set-the-pivot.js">Lesson 10 - Set the Pivot',
+							'	<option value="?load=unit10/17-flowing-river.js">Lesson 10 - Flowing River',
+							'</select>'].join('\n');
+
+					if ('undefined' !== typeof loadScript) {
+						elem.innerHTML = elem.innerHTML + "&nbsp;Showing " + loadScript;
+					}
+					elem.innerHTML = elem.innerHTML + "</form><br/>";
+
+					document.body.insertBefore(elem,document.body.childNodes[0])
+			}
+		</script>
+	</body>
+</html>
