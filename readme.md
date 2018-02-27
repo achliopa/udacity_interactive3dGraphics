@@ -150,3 +150,69 @@
 ### Light field dimensions
 
 * radiance gives perspective = lightfield(5 variables) 3 for location and 2 for direction. lightfield is the  calculation of light coming fromany source antwgere
+
+### Final Problem -Programming Errors
+
+* npm init in project repo
+* launch live-server
+* open consdole
+* fix typos
+* see cube on screen
+
+## Lesson 3 - Interview: #D Modelling and Printing
+
+* RAPID PROTOTYPING
+*  sculpteo based in france prints 3d models
+* intgerviewd in autodesk sf jesse harrington au
+* 3d printing shortens product development lifecycle. model it -> 3d print it (at home or to a provider e.g shapewaves. review it. go to mass production
+* use support material in gaps and wash it off after
+* limits design contstrains
+* helps make good design
+* materials: bronze, metal all plastics
+* printers take stl or obj files
+* EXPENSIVE TO SCALE
+* high res are slow
+
+## Lesson 4 - Points - Vectors and Meshes
+
+### Coordinate System
+
+* in computer graphics we use points and vectors
+* in 2d the point is defined by x,y 
+
+### Cartesian Coordinates
+
+* in 3d graphics we use the cartesian coordinate system one point of reference (0,0,0) and 3 direction vectors x,y,z
+* the points position is defined by (x,y,z)
+* 3d vectors are described by a similar coordinate system. but the origin is not needed
+* a vector represents a motion which is describved by 3 numbers. it describes how far to move to get from one point to another. the movement is not bound to any position in space
+* distance or duration represents vector
+
+### Left hand vs right handed
+
+* coordinate systems have orientation
+* we have left handed and right handed system. the default is right handed with z axis pointing upward (thumb point to x + direction, index to y axis + direction and middle finger to z axis + direction)
+* in left handed system the z axis + direction is downwards
+* long/lat/alt is a right hand system as longitude increases left(east) and latitude increases north (up)
+
+### The sun also rises
+
+* minecraft as an example. in beta version x pointed south, z pointed west y pointed up (this is a assumption because the sun rised in the east)
+* in final release x axis now points east z points south , y points up (sun rizes in south)
+* both are right handed systems
+
+### Which way is up
+
+* there is no definite answer. 
+* in tterms of actual world engineering xy is the surface and z is up. so in terms of screen it would be x left to right, z bottom to top and y towards the inside of the screen.
+* web developers use the following ccordinates. x left to right, y bottom to top, z towards the viewer
+* these 2 systems differ by a rotation of 90deg along to the x axis
+
+* experts say negative y up (towards viewer) so like the engineering approach or z up
+* coordinates transformation is tricky we need the drawing
+
+### Points and Lines
+
+* 3 basic primitives in graphics processing: points , lines, triangles. 
+* triangles the most important. everything you see in a computer game is a triangle
+* we touch points and lines briefly.
