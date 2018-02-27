@@ -145,7 +145,7 @@
 
 ### Firefly
 
-* if our camera is the source of ligfht. no shadows can be seen , are dimmer the further they are
+* if our camera is the source of ligfht. no shadows can be seen , objects are dimmer the further they are
 
 ### Light field dimensions
 
