@@ -215,4 +215,101 @@
 
 * 3 basic primitives in graphics processing: points , lines, triangles. 
 * triangles the most important. everything you see in a computer game is a triangle
-* we touch points and lines briefly.
+* we touch points and lines briefly to focus on triangles 
+* a point is defines by (x,y,z) and a line by 2 points of 3 coordinates each.
+
+### Triangles
+
+* a triangle is defined by 3 points of x,y,z coordinates
+* point has 0 dimensions, line has 1 dimension , triangle has 2 dimensions
+* in 3d graphics light reflection matters so surface, not whats inside the surface, the volume.
+
+### Creating Geometry in three.js
+
+* in three.js we create a geometry object and add vertices to it.
+
+```
+// define geometry
+var triangleGeometry. new THREE.Geometry();
+// vertices
+triangleGeometry.vertices.push(new THREE.Vector3(1,1,0));
+triangleGeometry.vertices.push(new THREE.Vector3(3,1,0));
+triangleGeometry.vertices.push(new THREE.Vector3(3,3,0));
+// add a face
+triangleGeometry.faces.push(new THREE.Face3(0,1,2)); // add vertices to face based on their index on vertix array
+```
+
+* the code above defines a triangle as an array of 3 vertex points with 3 dimensions and adds a face to it (surface)
+* it is a questiion why a point is defined as a Vector3 object
+
+###  Create a square
+
+* to show an objedct on screen we need geometry and material, then put them on a mesh and add it to screen. so to show the former triamngle geometry on screen we need to add
+
+```
+// set the material
+var triangleMaterial = new THREE.MeshBasicMaterial({
+	color: 0x2685AA,
+	side: THREE.DoubleSide
+	});
+// combine geometry and material to a mesh
+var triangleMesh = new THREE.Mesh(triangleGeometry, triangleMaterial);
+// add mesh to the scene
+scene.add(TriangleMesh);
+```
+
+### Quiz. Create a Square 
+
+* in this excersize we implement a function to set the geometry for a square
+
+```
+function drawSquare(x1, y1, x2, y2) {
+
+	var square = new THREE.Geometry();
+	// Your code goes here
+	square.vertices.push( new THREE.Vector3(x1,y1,0));
+	square.vertices.push( new THREE.Vector3(x2,y1,0));
+	square.vertices.push( new THREE.Vector3(x2,y2,0));
+	square.vertices.push( new THREE.Vector3(x1,y2,0));
+	square.faces.push(new THREE.Face3(0,1,2));
+	square.faces.push(new THREE.Face3(0,3,2));
+	// don't forget to return the geometry!	The following line is required!
+	return square;
+}
+```
+
+* three.js library supports a 4 point face for squares `square.faces.push(new THREE.Face4(0,1,2,3));`
+
+### Triangulation and Tesseletaion
+
+* tessellate: from greek word for mosaic. is breaking an object in polygons of any sort
+* triangulation: is to breake an object in triangles. usually we use the same vertices despite if we do triangulation or tesselation
+* triangulation is a subset of tesselation
+* gpus are optimized for triangulation and triangles as a triangle is always in the same plane
+* a hexagon is minimum represented by 4 triangles without adding vertices
+* a rule is that for a polygon of n edges we need n-2 triangles to represent it.
+* high concavities reduce or eliminate the triangulation options for a polygon (without adding vertices)
+
+### Vertex Ordering and Culling
+
+* 3-D Computer Graphics uses an interesting concept to speed up object display. Backface Culling
+* if we look towards a box only the sides of the box that facve towards us need to be rendered as they are visible. the backfaces of the box dont need rendering as they are not visible. Backface culling can throw away about half the face of the object so it speeds up rendering
+* how the GPU decides whats backface and whgats frontface. in WebGl this is determined by the order of the triangle points. if the order is clockwise it is backfacing. if it is counterclockwise it is frontfacing. this rule is called right hand rule (right thumb up)
+
+### Quiz. Return of the Square.
+
+* in three.js backface dulling is enabled by the *MeshBasicMaterial* config object property *side:* setiing its value to *THREE.FronSide*
+* in this exercise backface culling hides one of the 2 triangles so we dont see the square. we fix that by correcting the vertex order (right hand rule)
+
+* the fix is changing the order `geometry.faces.push( new THREE.Face3( 2, 0, 3 ) );` to `geometry.faces.push( new THREE.Face3( 2, 3, 0 ) );` using the right hand rule
+
+### Model Creation
+
+* manual creating triangles is a pain. a common way to create geometric objects is with 3d modelling software (like 3D studio max)
+* models can be acquired by laser scanners
+* these programs output a mesh of triangles.
+* in WebGL and three.js there is a process where we can take a mesh in a 3D file format and convert it to a form that WebGL can read.
+
+## Lesson 5 - Problem Set
+
+## 1. Quiz. Polygon Creator
