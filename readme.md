@@ -313,3 +313,107 @@ function drawSquare(x1, y1, x2, y2) {
 ## Lesson 5 - Problem Set
 
 ## 1. Quiz. Polygon Creator
+
+* write a regular polygon creator, a regular polygon around the axis origin.
+* we have a function that generates the vertices based on the angle around the center
+* draw a polygon wiki [canvas](http://wp.storminthecastle.com/2013/07/24/how-you-can-draw-regular-polygons-with-the-html5-canvas-api/)
+* our code 
+
+```
+		// YOUR CODE HERE
+		//Save the vertex location - fill in the code
+		geo.vertices[pt] = new THREE.Vector3(x,y,0.0);
+	}
+	// YOUR CODE HERE
+	// Write the code to generate minimum number of faces for the polygon.
+	for (var face = 0; face<sides-2;face++ ) {
+		geo.faces.push(new THREE.Face3(0,face+1,face+2));
+	}
+```
+
+* our code is parametrical and takes polygon sides count as a pram.
+
+### 2. Quiz. Polygon Location
+
+* location will be the center of the polygon and passed as a THREE.Vector3(x,y,z). 
+* we can access its values to be used in the calculations as location.x location.y ...
+* its easy . we add location.x and y to our polygon vertices coordinates
+
+```
+geo.vertices.push( new THREE.Vector3( x+location.x, y+location.y, 0.0 ) );
+
+// or
+
+
+		var x = Math.cos( angle ) + location.x;
+		var y = Math.sin( angle ) + location.y;
+```
+
+
+### 3. Quiz. Polygon Radius
+
+* we pass a3rd parameter to our Polygon Geometry function . radius.  as the ya re 1 by default
+
+```
+		var x = Math.cos(angle)*radius + location.x;
+		var y = Math.sin(angle)*radius + location.y;
+```
+
+
+### 4. Quiz. Build a Staircase
+
+* we will use the THREE.CubeGeometry() method to create 2 pieces per step . the vertical and the horizontal.. 
+
+
+* the params passed are (width, height, depth) or x,y,z
+
+```
+var stepVertical = new THREE.CubeGeometry(stepWidth, verticalStepHeight, stepThickness);
+var stepHorizontal = new THREE.CubeGeometry(stepWidth, stepThickness, horizontalStepDepth);
+```
+
+* it generates triangles for us
+* once w have this object we can use it multiple times to create 3JS meshes.. each of which consists of geometry and material
+
+```
+var stepMesh
+
+// make and position the vertical part of the step
+stepMesh = new THREE.mesh(stepVertical, stepMaterialVerical);
+// the position is where the center of the block will be
+// we can define possition as THREE.Vector3(x,y,z) or
+const {x,y,z} = stepMesh.position; x = 0; y=verticalStepHeight/2; z = 0; //ES6 obejct destructuring, x=centereda t origin, y half of height: above ground plane, zcentered at origin
+scene.add(stepMesh);
+// make and position the horizontal part of the step
+stepMesh = new THREE.mesh(stepHorizontal, stepMaterialHorizontal);
+// the position is where the center of the block will be
+// we can define possition as THREE.Vector3(x,y,z) or
+const {x,y,z} = stepMesh.position; x = 0; y=verticalStepHeight + stepThickness/2; z = horizontalStepDepth - stepThickness/2; //ES6 obejct destructuring,
+scene.add(stepMesh);
+```
+
+* we use plane grids to help us understand geometry. the lines are every 100 units
+* the solution is 
+
+```
+	for(var i=0 ; i<6 ; i++) {
+		// Make and position the vertical part of the step
+		stepMesh = new THREE.Mesh( stepVertical, stepMaterialVertical );
+		// The position is where the center of the block will be put.
+		// You can define position as THREE.Vector3(x, y, z) or in the following way:
+		stepMesh.position.x = 0;			// centered at origin
+		stepMesh.position.y = verticalStepHeight/2 + (verticalStepHeight + stepThickness)*i;	// half of height: put it above ground plane
+		stepMesh.position.z = (horizontalStepDepth - stepThickness)*i;// centered at origin
+		scene.add( stepMesh );
+		
+		// Make and position the horizontal part
+		stepMesh = new THREE.Mesh( stepHorizontal, stepMaterialHorizontal );
+		stepMesh.position.x = 0;
+		// Push up by half of horizontal step's height, plus vertical step's height
+		stepMesh.position.y = (stepThickness/2 + verticalStepHeight) + (verticalStepHeight + stepThickness)*i;
+		// Push step forward by half the depth, minus half the vertical step's thickness
+		stepMesh.position.z = (horizontalStepDepth/2 - stepHalfThickness) + (horizontalStepDepth - stepThickness)*i;
+		scene.add( stepMesh );
+	}
+```
+
