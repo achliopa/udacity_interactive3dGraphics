@@ -417,3 +417,47 @@ scene.add(stepMesh);
 	}
 ```
 
+### 5. Quiz: Drinking Bird
+
+* we will add a birds hat, head, neck and body.
+* we have a 2d blueprnt
+* axis are x=red, y=green, z=blue
+* we will use 3 3d shapes.
+	* `boxGeometry = new THREE.CubeGeometry(125.6 /* width */, 389.8 /* height */, 202.1 /* depth */);`
+	* `sphereGeometry = new THREE.SphereGeometry(202.1 /* radius */, 32 /* segs width , tesselation across the equator */, 16 /* segs height, tesselation pole to pole );`
+	* `cylinderGeometry = new THREE.CylinderGeometry(29.4 /* radius top */, 202.1 /* radius bottom */, 553.5 /* height */, 32 /* radius segments, amount of tesselation across the equator*/)`
+* we will add code in 3 functions
+	* createSupport() - base,legs, feet
+	* createBody() - body and spine
+	* createHead() - head and hat
+* we follow the 2d blueprint to position shapes on axis. e.g body
+
+```
+// Body of the bird - body and the connector of body and head
+function createBody() {
+	var sphereMaterial = new THREE.MeshLambertMaterial( { color: 0xA00000 } );
+	var cylinderMaterial = new THREE.MeshLambertMaterial( { color: 0x0000D0 } );
+	// body
+	var sphere = new THREE.Mesh(
+	new THREE.SphereGeometry(58 ,32,16 ),sphereMaterial);
+	sphere.position.x = 0;
+	sphere.position.y = 160;
+	sphere.position.z = 0;
+	scene.add( sphere );
+	// spine
+	var cylinder = new THREE.Mesh(
+	new THREE.CylinderGeometry(12,12,390,32 ),cylinderMaterial);
+	cylinder.position.x = 0;
+	cylinder.position.y = 355;
+	cylinder.position.z = 0;
+	scene.add( cylinder );
+}
+```
+
+### 6. Quiz: Z-Fighting
+
+* z-fighting is when 3 shapes of different material ocupy exact same surface and try to overwrite the other causing wrong visuals
+
+## Lesson 6 - Interview:Modeling in the Real World
+
+## Lesson 7 - Colors and materials
