@@ -21,7 +21,9 @@ function someObject(material) {
 	geometry.vertices.push( new THREE.Vector3( 3, 7, 0 ) );
 
 	geometry.faces.push( new THREE.Face3( 0, 1, 2 ) );
-	geometry.faces.push( new THREE.Face3( 2, 0, 3 ) );
+	// order flipped bvackface culling
+	// geometry.faces.push( new THREE.Face3( 2, 0, 3 ) );
+	geometry.faces.push( new THREE.Face3( 2, 3, 0 ) );
 
 	var mesh = new THREE.Mesh( geometry, material );
 

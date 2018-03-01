@@ -215,4 +215,205 @@
 
 * 3 basic primitives in graphics processing: points , lines, triangles. 
 * triangles the most important. everything you see in a computer game is a triangle
-* we touch points and lines briefly.
+* we touch points and lines briefly to focus on triangles 
+* a point is defines by (x,y,z) and a line by 2 points of 3 coordinates each.
+
+### Triangles
+
+* a triangle is defined by 3 points of x,y,z coordinates
+* point has 0 dimensions, line has 1 dimension , triangle has 2 dimensions
+* in 3d graphics light reflection matters so surface, not whats inside the surface, the volume.
+
+### Creating Geometry in three.js
+
+* in three.js we create a geometry object and add vertices to it.
+
+```
+// define geometry
+var triangleGeometry. new THREE.Geometry();
+// vertices
+triangleGeometry.vertices.push(new THREE.Vector3(1,1,0));
+triangleGeometry.vertices.push(new THREE.Vector3(3,1,0));
+triangleGeometry.vertices.push(new THREE.Vector3(3,3,0));
+// add a face
+triangleGeometry.faces.push(new THREE.Face3(0,1,2)); // add vertices to face based on their index on vertix array
+```
+
+* the code above defines a triangle as an array of 3 vertex points with 3 dimensions and adds a face to it (surface)
+* it is a questiion why a point is defined as a Vector3 object
+
+###  Create a square
+
+* to show an objedct on screen we need geometry and material, then put them on a mesh and add it to screen. so to show the former triamngle geometry on screen we need to add
+
+```
+// set the material
+var triangleMaterial = new THREE.MeshBasicMaterial({
+	color: 0x2685AA,
+	side: THREE.DoubleSide
+	});
+// combine geometry and material to a mesh
+var triangleMesh = new THREE.Mesh(triangleGeometry, triangleMaterial);
+// add mesh to the scene
+scene.add(TriangleMesh);
+```
+
+### Quiz. Create a Square 
+
+* in this excersize we implement a function to set the geometry for a square
+
+```
+function drawSquare(x1, y1, x2, y2) {
+
+	var square = new THREE.Geometry();
+	// Your code goes here
+	square.vertices.push( new THREE.Vector3(x1,y1,0));
+	square.vertices.push( new THREE.Vector3(x2,y1,0));
+	square.vertices.push( new THREE.Vector3(x2,y2,0));
+	square.vertices.push( new THREE.Vector3(x1,y2,0));
+	square.faces.push(new THREE.Face3(0,1,2));
+	square.faces.push(new THREE.Face3(0,3,2));
+	// don't forget to return the geometry!	The following line is required!
+	return square;
+}
+```
+
+* three.js library supports a 4 point face for squares `square.faces.push(new THREE.Face4(0,1,2,3));`
+
+### Triangulation and Tesseletaion
+
+* tessellate: from greek word for mosaic. is breaking an object in polygons of any sort
+* triangulation: is to breake an object in triangles. usually we use the same vertices despite if we do triangulation or tesselation
+* triangulation is a subset of tesselation
+* gpus are optimized for triangulation and triangles as a triangle is always in the same plane
+* a hexagon is minimum represented by 4 triangles without adding vertices
+* a rule is that for a polygon of n edges we need n-2 triangles to represent it.
+* high concavities reduce or eliminate the triangulation options for a polygon (without adding vertices)
+
+### Vertex Ordering and Culling
+
+* 3-D Computer Graphics uses an interesting concept to speed up object display. Backface Culling
+* if we look towards a box only the sides of the box that facve towards us need to be rendered as they are visible. the backfaces of the box dont need rendering as they are not visible. Backface culling can throw away about half the face of the object so it speeds up rendering
+* how the GPU decides whats backface and whgats frontface. in WebGl this is determined by the order of the triangle points. if the order is clockwise it is backfacing. if it is counterclockwise it is frontfacing. this rule is called right hand rule (right thumb up)
+
+### Quiz. Return of the Square.
+
+* in three.js backface dulling is enabled by the *MeshBasicMaterial* config object property *side:* setiing its value to *THREE.FronSide*
+* in this exercise backface culling hides one of the 2 triangles so we dont see the square. we fix that by correcting the vertex order (right hand rule)
+
+* the fix is changing the order `geometry.faces.push( new THREE.Face3( 2, 0, 3 ) );` to `geometry.faces.push( new THREE.Face3( 2, 3, 0 ) );` using the right hand rule
+
+### Model Creation
+
+* manual creating triangles is a pain. a common way to create geometric objects is with 3d modelling software (like 3D studio max)
+* models can be acquired by laser scanners
+* these programs output a mesh of triangles.
+* in WebGL and three.js there is a process where we can take a mesh in a 3D file format and convert it to a form that WebGL can read.
+
+## Lesson 5 - Problem Set
+
+## 1. Quiz. Polygon Creator
+
+* write a regular polygon creator, a regular polygon around the axis origin.
+* we have a function that generates the vertices based on the angle around the center
+* draw a polygon wiki [canvas](http://wp.storminthecastle.com/2013/07/24/how-you-can-draw-regular-polygons-with-the-html5-canvas-api/)
+* our code 
+
+```
+		// YOUR CODE HERE
+		//Save the vertex location - fill in the code
+		geo.vertices[pt] = new THREE.Vector3(x,y,0.0);
+	}
+	// YOUR CODE HERE
+	// Write the code to generate minimum number of faces for the polygon.
+	for (var face = 0; face<sides-2;face++ ) {
+		geo.faces.push(new THREE.Face3(0,face+1,face+2));
+	}
+```
+
+* our code is parametrical and takes polygon sides count as a pram.
+
+### 2. Quiz. Polygon Location
+
+* location will be the center of the polygon and passed as a THREE.Vector3(x,y,z). 
+* we can access its values to be used in the calculations as location.x location.y ...
+* its easy . we add location.x and y to our polygon vertices coordinates
+
+```
+geo.vertices.push( new THREE.Vector3( x+location.x, y+location.y, 0.0 ) );
+
+// or
+
+
+		var x = Math.cos( angle ) + location.x;
+		var y = Math.sin( angle ) + location.y;
+```
+
+
+### 3. Quiz. Polygon Radius
+
+* we pass a3rd parameter to our Polygon Geometry function . radius.  as the ya re 1 by default
+
+```
+		var x = Math.cos(angle)*radius + location.x;
+		var y = Math.sin(angle)*radius + location.y;
+```
+
+
+### 4. Quiz. Build a Staircase
+
+* we will use the THREE.CubeGeometry() method to create 2 pieces per step . the vertical and the horizontal.. 
+
+
+* the params passed are (width, height, depth) or x,y,z
+
+```
+var stepVertical = new THREE.CubeGeometry(stepWidth, verticalStepHeight, stepThickness);
+var stepHorizontal = new THREE.CubeGeometry(stepWidth, stepThickness, horizontalStepDepth);
+```
+
+* it generates triangles for us
+* once w have this object we can use it multiple times to create 3JS meshes.. each of which consists of geometry and material
+
+```
+var stepMesh
+
+// make and position the vertical part of the step
+stepMesh = new THREE.mesh(stepVertical, stepMaterialVerical);
+// the position is where the center of the block will be
+// we can define possition as THREE.Vector3(x,y,z) or
+const {x,y,z} = stepMesh.position; x = 0; y=verticalStepHeight/2; z = 0; //ES6 obejct destructuring, x=centereda t origin, y half of height: above ground plane, zcentered at origin
+scene.add(stepMesh);
+// make and position the horizontal part of the step
+stepMesh = new THREE.mesh(stepHorizontal, stepMaterialHorizontal);
+// the position is where the center of the block will be
+// we can define possition as THREE.Vector3(x,y,z) or
+const {x,y,z} = stepMesh.position; x = 0; y=verticalStepHeight + stepThickness/2; z = horizontalStepDepth - stepThickness/2; //ES6 obejct destructuring,
+scene.add(stepMesh);
+```
+
+* we use plane grids to help us understand geometry. the lines are every 100 units
+* the solution is 
+
+```
+	for(var i=0 ; i<6 ; i++) {
+		// Make and position the vertical part of the step
+		stepMesh = new THREE.Mesh( stepVertical, stepMaterialVertical );
+		// The position is where the center of the block will be put.
+		// You can define position as THREE.Vector3(x, y, z) or in the following way:
+		stepMesh.position.x = 0;			// centered at origin
+		stepMesh.position.y = verticalStepHeight/2 + (verticalStepHeight + stepThickness)*i;	// half of height: put it above ground plane
+		stepMesh.position.z = (horizontalStepDepth - stepThickness)*i;// centered at origin
+		scene.add( stepMesh );
+		
+		// Make and position the horizontal part
+		stepMesh = new THREE.Mesh( stepHorizontal, stepMaterialHorizontal );
+		stepMesh.position.x = 0;
+		// Push up by half of horizontal step's height, plus vertical step's height
+		stepMesh.position.y = (stepThickness/2 + verticalStepHeight) + (verticalStepHeight + stepThickness)*i;
+		// Push step forward by half the depth, minus half the vertical step's thickness
+		stepMesh.position.z = (horizontalStepDepth/2 - stepHalfThickness) + (horizontalStepDepth - stepThickness)*i;
+		scene.add( stepMesh );
+	}
+```
+
