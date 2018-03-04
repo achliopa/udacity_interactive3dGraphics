@@ -45,7 +45,9 @@ function init() {
 
 function createBall() {
 	// Do not change the color itself, change the material and use the ambient and diffuse components.
-	var material = new THREE.MeshBasicMaterial( { color: 0x80FC66, shading: THREE.FlatShading } );
+	// var material = new THREE.MeshBasicMaterial( { color: 0x80FC66, shading: THREE.FlatShading } );
+	var material = new THREE.MeshLambertMaterial({color: 0x80FC66, shading: THREE.FlatShading});
+	material.ambient.setRGB(material.color.r * 0.4,material.color.g * 0.4,material.color.b * 0.4 );
 	var sphere = new THREE.Mesh( new THREE.SphereGeometry( 400, 64, 32 ), material );
 	return sphere;
 }
