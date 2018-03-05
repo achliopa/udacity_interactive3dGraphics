@@ -669,4 +669,100 @@ function createBall() {
 ### Specular material
 
 * materials that are diffuse reflectors: wood,concrete, newspaper
-* materials that are shiny or glossy are specular materials, polish metals, plastics, glass
+* materials that are shiny or glossy are specular materials, polish metals, plastics, glass. they look different when we view them from different angles.
+* we need to take into account the direction from the surface to the eye
+* a way to simultate these material is blinn-phong reflection model: the full formula has a number of terms in it for self-shadowing and for a shininess factor called the fernel coeficient.
+* A simplecommon form is the following: Specular = MAX(NdotH,O)^s, maximum of NdotH or NdotH whichever is larger raised to a power. 
+* N is the surface normal
+* H is the half angle vector
+* If we have a surface, a light source direction, and a viewr angle. half angle is the normalized vector of a mirror that would reflet the light source directly to the eye. H vector splits the angle between the light source and the eye in half . so the angle between the half angle vector and the view angle is the same as angle between the half angle vectort ant the light source
+* if surface normal matches the half angle then the surface acts like a mirror and the dot product is 1. if N and H angle is 90o the dot product is 0
+* S factor is the shininess or specular power and has a power from 1 to infinity. 100 and above lrooks the same.
+* a fraction to a power is a smaller number . shineness effect increases the smaller the number.
+* the half angle represents the distribution of microfacets on a surface
+* microfacet is a way of thinking how a material reflects light. a rough surface with a lot of angles reflects light with lower intencity
+
+### Gouraud Shading
+
+* when we compute lighting and interpolate like a column. its called gouraud shading. our eye is very good distinguishing areas where shading changes. they look like lines the mach bands. to avoid this we need to calculate shading more often , by using more triangles (increase teesselation)
+
+### Phong Shading
+
+* increasing tesselation makes lighting look better
+* even then increased shiness creates problems.
+* the number of triangle is larger across the edges of the shape, so increasing them stresses the GPU.
+* another approach is t oevaluate the reflection model of each pixel.
+* instead of interpolating rgb values that result from computing the effects of lighting, we calculate anything we need in the reflection model. in this case all we have to interpolate is the shading normal
+* on the GPU we input in the VErtex Shader the position normal and in the output we have the screen position and instead of an RGB computed from the reflection calculation, we put transformed normal. so vertex normals are interpolated per pixel
+* this interpolated normal is input to the fragment shader which then evaluates the reflection model and  computes the RGB value to be displayed
+* the per pixel interpolated normals will not be normalized
+* each normal should be normalized before using it in the lighting computation
+* when we interpolate normals and calculate the reflection model at each pixel, this is called per pixel shading or phong shading
+* PHONG inventer the phong reflection model which gives a spectral highlight or a shingin spot. and phong shading which we discussed here
+* in GOuraud shading color is computed at vertex and interpolated between the two
+
+### Quiz Material Calculations
+
+* 100 triangle * 3 vertex/triangle = 300 vertices / 5 triangles share a verte = 60 evals in Gouraud Shading
+* 100 triangle * 60 pixels = 6000 evals in phong so 100/1
+
+### Introduction to Transparency
+
+* up to now we were focusing on opaque materials where light hits the surface and bounces off
+* in trasparent materials, light refracts and changes direction when it hits a transparent surface, it makes an object in the material look bent.
+* transparency also changes light distribution on a surface (lense effect) focusing the light in spots
+* these bright spots are called caustics
+* color and intensity of light can be filtered by a transparent object
+* the more the light travels through the object the more light gets absorbed.
+* light refraction is GPU expensive
+* light absorbsion throughthe material is also costy
+* we will focus on light absorbsion on thin surfaces like filters and only for objecs that are behind the filter
+* https://github.com/arodic/jellyfish, https://akirodic.com/about
+
+### Blending
+
+* one way to think of transparency is that we want to see a bit of both objects
+* if we have two objects on screen, one object and a filter on top of it. one approach is to blent the two by adding one every other pixel by the filter and one every other pixel the object behind it. THis algorithm is called SCREEN-DOOR TRANSPARENCY and is a 50/50 mix.
+
+### The Over Operator
+
+* this is a simple way to show an object behind a transparent object. 
+* the object behind is the destination and the object infront the source
+* over operator is simply using opacity to blend the colors like in CSS.
+* the final color is as*Cs +(1-as)*Cd . where as is the source alpha or opacity. with 1 fully opaque and 0 fully transparent. 
+* this is a form of linear interpolation
+* an other operation in wbGl is the add
+
+### The Z-Buffer and Transparency
+
+* the over operator shows a transparent effect by blending 2 objects
+* but how z-buffer works when we are using transparent objects.
+* z-buffer stores the depth of the object that is closer to the eye
+* if we draw the further object first transparency will work.
+* if we draw close object first the back object gets ignored by the z-buffer so there is no transparency
+
+### Quiz: Solving transparent Z-buffering
+
+* draw back to front. dr4aw opaque objects first transparent later
+* however if we stack filters (transparent objects) one behind the other, if we violate the first rule the second will not solve the problem
+* so our only way to solve it is back to front.
+
+### Transparency and Three.js
+
+* Three.js apllyes transparency by:
+	* Render all opaque objects first, z-buffer on
+	* turn on blending
+	* render transparent objects sorted back to front
+	* we still have interpenetration of transparent objects (zbbuffer and center point)
+
+```
+var movingBoxmaterial = new THREE.MeshLambertMaterial({
+	color: 0xE53319, opacity: 0.4, transparent: true
+});
+```
+
+	* the problem in interpenetration is as objects surfaces cross and the view angle intersects with the crossing surfaces in two lines. in one case the one surface is infront and on the othe the other. so the draw order will always be wrong for one pixel or the other depending on which object gets drawn first
+
+	* in our example red object is rendered after yellow, and the red object is closer to the eye
+
+### Advanced Transparency Methods
