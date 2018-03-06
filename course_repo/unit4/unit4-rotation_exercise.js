@@ -71,9 +71,8 @@ function fillScene() {
 	cube = new THREE.Mesh(
 		new THREE.CubeGeometry( 110, 4, 4 ), handMaterial );
 	cube.position.y = 14;
-
 	// YOUR CODE HERE
-
+	cube.rotation.y = 2* Math.PI / 3;
 	scene.add( cube );
 }
 

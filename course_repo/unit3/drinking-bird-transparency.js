@@ -51,8 +51,8 @@ function drawDrinkingBird() {
 	bodyMaterial.specular.setRGB( 0.5, 0.5, 0.5 );
 
 	// MODIFY THIS TO BE TRANSPARENT:
-	var glassMaterial = new THREE.MeshPhongMaterial( { color: 0xFFFFFF, shininess: 100 } );
-
+	var glassMaterial = new THREE.MeshPhongMaterial( { color: 0x000000, opacity: 0.3, transparent: true, specular: 0xFFFFFF, shininess: 100} );
+	
 	var legMaterial = new THREE.MeshPhongMaterial( { shininess: 4 } );
 	legMaterial.color.setHex( 0xAdA79b );
 	legMaterial.specular.setRGB( 0.5, 0.5, 0.5 );

@@ -766,3 +766,187 @@ var movingBoxmaterial = new THREE.MeshLambertMaterial({
 	* in our example red object is rendered after yellow, and the red object is closer to the eye
 
 ### Advanced Transparency Methods
+
+* rendering transparent objects is more complex than simply sorting objects and drawing them.
+* so far we dont show backfaces of transparent objects. if we turn them on we have strange artifacts
+* assume we see an object from the side with the pahses in that order, 1 back,2 top,3front,4 bottom. the object is inclined to front.
+* Phase 1 draws first and 2 blends with it. phase 3 is drawn filling z-buffer and blends with phase 1. phase 4 is behind phase 3 so is invisible. only 1 has an effect on rendering.
+* even with back face enabled and good sorting order, we have problem with different sized objects.
+* assume a white plane and a red object resting on it. both transparent. middle of the ground plane is closer to the eye so white plane is drawn after. so to the eye it seems the white plane is above the red object.
+* complex objects can have two or more surfaces overlapping a pixel. draw order determines whats drawn on the screen. we have to control the order of the riangles on a surface to make it look right. this is unrealistic
+* A technique that works well for complex objects is depth peeling. the idea is to peel away each transparent layer untill all layers are processed by storing an addtional z-depth for each pixel/. e.g 1st layer are all surfaces closest to he camera, 2nd layer are 2nd closest surfaces, 3rd layer
+* this algorithm requires many passes
+* a demo on [depth peeling](http://www.glowscript.org/#/user/GlowScriptDemos/folder/Examples/program/Transparency/edit) [article](https://developer.nvidia.com/content/transparency-or-translucency-rendering)
+* we use an a buffer for each pixel  with all the transparent fragments indexed by their depth order. we then combine the fragments in right order. it is possible in new GPUs. mobile devices use Tile-Based architecture. 
+* another approach is Stochastic Transparency it is Screen-Door Transparency with randmness to get a better average
+* A futere technique is ray tracing
+
+## Lesson 8 - Problem Set
+
+### 2.Quiz: Shiny Bird
+
+* Shininess: Hat,Body = 100, Leg=4, foot=30, Specular Color 0.5,0.5,0.5
+* use MeshPhongmaterial
+
+```
+	var hatMaterial = new THREE.MeshPhongMaterial( );
+	hatMaterial.color.r = 24/255;
+	hatMaterial.color.g = 38/255;
+	hatMaterial.color.b = 77/255;
+	hatMaterial.specular = new THREE.Color(0x7f7f7f);
+	//hatMaterial.specular.setRGB(0.5,0.5,0.5);
+	hatMaterial.shininess = 100;
+
+	var bodyMaterial = new THREE.MeshPhongMaterial( );
+	bodyMaterial.color.setRGB( 31/255, 86/255, 169/255 );
+	bodyMaterial.specular = new THREE.Color(0x7f7f7f5);
+	bodyMaterial.shininess = 100;
+
+	var legMaterial = new THREE.MeshPhongMaterial( );
+	legMaterial.color.setHex( 0xAdA79b );
+	legMaterial.specular = new THREE.Color(0x7f7f7f);
+	legMaterial.shininess = 4;
+
+	var footMaterial = new THREE.MeshPhongMaterial( { color: 0x960f0b } );
+	footMaterial.specular = new THREE.Color(0x7f7f7f);
+	footMaterial.shininess = 30;
+```
+
+* legs and feet are beveled for shininess
+* shininess look better on spherical objects
+
+### 4.Quiz: Drinking Bird Transparency
+
+* we need to add transparency to the bird body
+* teacher added an inside object to simulate the fluid
+* glass should be, 30% opaque, black regular black, specular color white.
+
+### 5.Quiz: Paper Lantern Shading
+
+* we have a paper lantern shading. inside and outside surfaces have the same shading, as normals have the same direction for inside and outside. this is not normal.
+* a solution is to render the model twice: one with backface cull and a second with frontface cull and flip the normal
+
+### 6.Quiz: Glass Cube
+
+* a glass cube on a table problem. even with good techioques like depth peeling. a blue transparent cube on a wooden opaque table gives artifacts. 
+* bottom of cube has z fighting with table surface
+
+## Lesson 9 - Transforms
+
+### Overview
+
+* transform is an operation that changes the position, orientation, size and shape of an object.
+* transforms are key parts of computer graphics
+* when we set position of an object we use a type of transformation called translation.
+* transformation in computer graphics is applied linear algebra. it is concerned with vector spaces
+
+### Point and Vector Operations
+
+* a point is a position and a vector describes a motion. 
+* we can combine points and vectors in various points by adding or subtracting their coordinates from one to the other.
+* if we subtract the location of point A from point B, we get a vectotr describing how we get from point A to point B. B-A = (Bx-Ax,By-Ay,Bz-Az) = V, A + V = B
+* we can add and subtract vectors as well. S+T = U (e.g S,T,U are the fases of a treiangle with the vector direction S and t cccw and U cw)
+* vectors can be multiplied by a scalar (its length is multiplied by the scalar)
+* multiply by a negative scalar reverses direction and multiplies its length.
+* multiplying a point by an number is a way to make the object look bigger.
+
+### Coordinate Values
+
+* points and vectors dont require numbers to be associated with them.
+* if i say define a vector from a point in the universe to another it exists, but has no coordinates until I define a frame of reference.
+* if in the previous example I say what are the vectors coordinated in reference to the earths latitude,longitude and altitude?. this will define a set off coordinates for the vector. these coordinates with change every second as the Earth rotates.
+( if i say what are the coordinates in terms of suns location and earths path). again i will get coordinates that change but slower.
+* always i need a point o f reference when i set coordinates.
+* in computer graphics we use the term world space, this is a user defined frame of refrence and usually right handed, we can add units to it or have it unitless if they are not needed.
+
+### Quiz: Point and vector sum
+
+* we treat point as a vector in linear algebra.
+
+### Quiz: Vector operation
+
+* 3JS library has many vector operations available. normalize() makes the vector a normalized one (length=1)
+
+### Translation
+
+* translation is a way to move sthing in anew position.
+
+```
+sphere = new.THREE.Mesh(
+	new THREE.SphereGeometry(104/2, 32, 16), sphereMaterial);
+sphere.position.x = 0;
+sphere.position.y = 540;
+sphere.position.z = 0;
+scene.add(sphere);
+```
+
+* translation and other transforms are built into every object. 
+* we can transform manualy by setting the position coordinates to a new set of values
+
+### Rotation
+
+* 3JS has built in support for object roation. 
+
+```
+cube = new THREE.Mesh(
+	new THREE.CubeGeometry(64,64,64), cubeMaterial);
+cube.rotation.x = 70 * Math.PI/180;
+```
+
+* in 3JS the rotation happens on the axis we apply it to , it is counterclowise and gets as parameter the degree in rads
+
+### Quiz: Roate a Clock
+
+* we need to rotate the clock indexes to point to 2 and 8 o clock `cube.rotation.y = 2* Math.PI / 3;`
+
+### Euler Angles
+
+* We note that there a re 3 rotation angles on the 3JS object. we can rotate along the x, y or z axis
+* when controling a plane x-rotation is known as PITCH (head up and down), y-rotation as YAW/HEAD (left right) and z-rotation as ROLL
+* these angles are called EULER angles
+* combining these 3 rotation we change the frame of rotation as the frame of rotation is the current orientation of the object like in a robot arm.
+* euler angles are use in flight simes, robotics and mobile devices as they can describe the mobile device orientation
+* they suffer from the gimbal effect. if i rotate say 90deg the x and y rotation have the same effect, we lose a degree of freedom
+
+### Rigid body Transforms vs Scaling
+
+* to scale sthing is to make it larger or smaller. 
+* rotation and translation are rigid body transformation as do not change objects body shape or volume.
+* scaling `balloon.scale = new THREE.Vector3(3,3,3);` *uniform scaling
+* scale is done in respect to an origin. as it it uses the Vector3
+* we can do per axis scaling `cube.scale.x = 1;` *non-uniform scaling*
+
+### QUiz: Scale a sphere
+
+* our aim is to sqeeze and elongate a sphere of radius 10 to look like a clock index (60 units long, 4 units wide and high). be careful that overall dimension is diameter so scale to 2r
+
+```
+	sphere.scale.x = 3;
+	sphere.scale.y = 0.2;
+	sphere.scale.z = 0.2;
+	sphere.rotation.y = Math.PI/6
+```
+
+### Scale Rotate Translate
+
+* up to this point we have been ignoring the order of operations.
+* we didnt care what need to be done before the orther
+* order matters whenb rotations and scales are involved.
+* 3JS does it in the followin order: Scale->Rotate-> Translate.
+* it doesnt matter what is the order in the code . the execution order is the one mandated by 3JS.
+
+### Rotate then Scale
+
+* if we rotated the clock index and then scaled, the rotation would have no effect. as rotating a spere nas no effect
+* 3js interactive scene editor [editor](https://threejs.org/editor/)
+
+### Quiz.build a Snowman.
+
+* move the stick and place it as arms. center must be placed 50 units up
+
+```
+	cylinder.rotation.x = Math.PI/2
+	cylinder.position.x = 0;
+	cylinder.position.y = 50;
+	cylinder.position.z = 0;
+```
