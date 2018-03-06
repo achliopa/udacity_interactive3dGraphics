@@ -75,19 +75,23 @@ function fillScene() {
 		new THREE.CubeGeometry( 70, 4, 4 ), minuteHandMaterial );
 	cube.position.y = 14;
 	cube.position.x = 70/2 - 10;
-	cube.rotation.y = -60 * Math.PI/180;
-	scene.add( cube );
+	var clockHand1 = new THREE.Object3D();
+	clockHand1.add(cube);
+	clockHand1.rotation.y = -60 * Math.PI/180;
+	scene.add( clockHand1 );
 
 	var sphere = new THREE.Mesh(
-		new THREE.SphereGeometry( 0.5, 32, 16 ), hourHandMaterial );
-	sphere.position.y = 18;	// move the hand above the other hand
-	sphere.position.x = 50/2 - 10;
-	sphere.rotation.y = 30 * Math.PI/180;
+	new THREE.SphereGeometry( 0.5, 32, 16 ), hourHandMaterial );
 	sphere.scale.x = 50;
 	sphere.scale.y = 4;
 	sphere.scale.z = 4;
+	sphere.position.y = 18;	// move the hand above the other hand
+	sphere.position.x = 50/2 - 10;
+	var clockHand2 = new THREE.Object3D();
+	clockHand2.add(sphere);
+	clockHand2.rotation.y = 30 * Math.PI/180;
 
-	scene.add( sphere );
+	scene.add( clockHand2 );
 }
 
 function init() {

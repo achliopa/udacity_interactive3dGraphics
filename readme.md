@@ -950,3 +950,113 @@ cube.rotation.x = 70 * Math.PI/180;
 	cylinder.position.y = 50;
 	cylinder.position.z = 0;
 ```
+
+### Rotate then translate
+
+* in the previous example if we first translated to the new position and then rotated then the stick would be on the ground far from the snowman. this is because rotation is arount hte axis so a distance from the axis messes things up. when we rotate and translate the object is on the axis => gets rotated => moves to its final position
+
+### Object3D
+
+* we ve seen that 3JS doesnt let us easily position and rotate the hand of a clock. it rotates and positions when we want to do it in reverse order.
+* a way to solve this is is to use Object3D to make a new object that contains our clock hand
+
+```
+var block = new THREE.MEsh(
+	new THREE.CubeGeometry(100,4,4), clockhandMaterial
+);
+
+var clockHand = new THREE.Object3D();
+clockHand.add(block);
+
+clockHand.rrotation.y = -70 * Math.Pi/180;
+scene.add(clockHand);
+```
+
+* the block is nested in the object3D clockHand object.
+* the transition moves the block so that one end is over the centter of the clockface so that the hand will rotate around the clock properly
+* no we have 6 available transformation 3 from block and 3 from Obkect3D wrapper. so we can overcome the order.    <=TcRcScTbRbSbO we can pick whichoune to use following the order (b = block, c = object3d container) TRS is the order.
+
+### Quiz: 2 Clock Hands
+
+```
+	cube = new THREE.Mesh(
+		new THREE.CubeGeometry( 70, 4, 4 ), minuteHandMaterial );
+	cube.position.y = 14;
+	cube.position.x = 70/2 - 10;
+	var clockHand1 = new THREE.Object3D();
+	clockHand1.add(cube);
+	clockHand1.rotation.y = -60 * Math.PI/180;
+	scene.add( clockHand1 );
+
+	var sphere = new THREE.Mesh(
+	new THREE.SphereGeometry( 0.5, 32, 16 ), hourHandMaterial );
+	sphere.scale.x = 50;
+	sphere.scale.y = 4;
+	sphere.scale.z = 4;
+	sphere.position.y = 18;	// move the hand above the other hand
+	sphere.position.x = 50/2 - 10;
+	var clockHand2 = new THREE.Object3D();
+	clockHand2.add(sphere);
+	clockHand2.rotation.y = 30 * Math.PI/180;
+	scene.add( clockHand2 );
+```
+
+### Hierarchy of Objects
+
+* Parent -> CHild -> GFrandChild (Tree)
+* we ve used object3D to give us access to more transformation combinations
+* object3D was created for a more important reason. to create a parent-child relationship between 2 objects.
+* when a child is connected to the parent. it is affected to what happens to the parent
+* this is called sceen graph hierarchy
+* we can make a car made of parts and move them all by translating the parent
+* we think the transformations we want to apply and move step by step
+* once we apply a transformation we forget about it
+* draw a picture if it helps.
+* undo the transformation if we are not moving  to our goal.
+
+### Instancing is the idea that a single geometric set of triangles can be reused again and again. e.g for a lamp we might have different transforms for each bulb but htte bulbs all have the same mesh.
+
+* e.g reuse a cylinder
+
+```
+var lamp = new THREE.Object3d();
+var cylinderGeometry = new THREE.CylinderGeometry(20,20,100,32);
+for(var i = 0; i<10; i++) {
+	var cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+	cylinder.rotation.x = 20*i*Math.Pi/180;
+	lamp.add(cylinder);
+}
+```
+
+### Robot Arm
+
+* lets see how hierarchy  works in practice. we'll make a robot with two parts to its arm. forearm and upperarm. 
+* forearm is made of 6 pieces.
+
+```
+forearm = new THREE.Object3D();
+var faLength = 80;
+createRobotExtender(forearm,faLength, robotForeammaterial);
+scene.add(forearm);
+```
+
+* createRobotExtender adds the geometry
+* upper arm is created in the same way to rotate around the origin
+* we are interestec on how these 2 parts hook together so that forearm is the child of forearm
+
+```
+forearm = new THREE.Object3D();
+var faLength = 80;
+createRobotExtender(forearm,faLength, robotForeammaterial);
+arm = new THREE.Object3D();
+var uaLength = 120;
+createRobotCrane(arm,uaLength, robotUpperArmMaterial);
+// move the forearm to the end of the ipperArm
+forearm.position.y = uaLength;
+// attach it to a parent/child hierarchy
+arm.add(forearm);
+scene.add(arm);
+```
+
+* when we rotate the arm, the forearm gets rotated
+* forearm has its own transforms independent
