@@ -90,7 +90,6 @@ function fillScene() {
 	var clockHand2 = new THREE.Object3D();
 	clockHand2.add(sphere);
 	clockHand2.rotation.y = 30 * Math.PI/180;
-
 	scene.add( clockHand2 );
 }
 
