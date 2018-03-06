@@ -1060,3 +1060,110 @@ scene.add(arm);
 
 * when we rotate the arm, the forearm gets rotated
 * forearm has its own transforms independent
+
+## Lesson 10 - Problem Set
+
+### 1.Quiz: Extended Robot Arm
+
+* in this exercise we will add a body to the robot. this is done by the createRobotBody func
+
+```
+	// Move the forearm itself to the end of the upper arm.
+	forearm.position.y = uaLength;
+	arm.add( forearm );
+	// scene.add( arm );
+	// YOUR CODE HERE
+	body = new THREE.Object3D();
+	var bodyLength = 60;
+	// Add robot body here, put arm at top.
+	// Note that "body" is already declared at top of this code.
+	// Here's the call to create the body itself:
+	// createRobotBody( body, bodyLength, robotBodyMaterial );
+	// ALSO CHECK OUT GUI CONTROLS FOR BODY
+	// IN THE FUNCTIONS setupGUI() and render()
+	// Note you'll have to add the body to the scene to get it to display.
+
+	createRobotBody(body,bodyLength,robotBodyMaterial);
+	arm.position.y = bodyLength;
+	body.add( arm);
+	scene.add(body);
+```
+
+### 2.Quiz: Robot hand
+
+* we finish the robot adding a hand (a second hand)
+
+```
+	handRight = new THREE.Object3D();
+	createRobotGrabber( handRight, handLength, robotHandRightMaterial );
+	handRight.position.y = faLength;
+	forearm.add( handRight );
+
+	handRight.rotation.z = effectController.hz * Math.PI/180;	// yaw
+	handRight.position.z = - effectController.htz;	// translate
+
+```
+
+### 3.Quiz:Series of Transforms
+
+* Normally matrix order matters. If I rotate, then translate an object, I'll
+get different result than if I transalte then rotate. However there are exceptions.
+
+* translation, scale  and translate/rotate along the same axis
+
+### 5.Quiz: Make a Flower
+
+* reusable code
+
+```
+var color1 = new THREE.Color(0xF08000); //orange
+var color2 = new THREE.Color(0x808000); //olive
+var color3 = new THREE.Color(0x0982FF); //bright blue
+
+geometry.fases[0].vertexColors = [color1, color2, color3];
+
+sphere = new THREE.Mesh(
+new THREE.SphereGeometry( 104/2, 32, 16), sphereMaterial);
+sphere.position.x = 0;
+sphere.position.y = 540;
+sphere.position.z = 0;
+scene.add(sphere);
+```
+
+* solution (we must put Mesh in the loop)
+
+```
+	for(var i=0; i<24; i++) {
+		var cylinder = new THREE.Mesh( cylGeom, petalMaterial );
+		cylinder.rotation.x = Math.PI/2;
+		cylinder.position.z = petalLength/2;
+		cylinder.position.y = flowerHeight;
+		var petal = new THREE.Object3D();
+		petal.add( cylinder );
+		petal.rotation.y = 15*i*Math.PI/180;
+		flower.add( petal );
+	}
+```
+
+### 6.Quiz: Improved Petals
+
+```
+	for(var i=0; i<24; i++) {
+		var cylinder = new THREE.Mesh( cylGeom, petalMaterial );
+		cylinder.scale.x = 0.25;
+		cylinder.position.y = petalLength/2;
+		var petal = new THREE.Object3D();
+		petal.add( cylinder );
+		petal.rotation.y = 15*i*Math.PI/180;
+		petal.rotation.z = 70*Math.PI/180;
+		petal.position.y = flowerHeight;
+
+		flower.add( petal );
+	}
+```
+
+## Lesson 11: Matrices
+
+### Matrix math
+
+* 
