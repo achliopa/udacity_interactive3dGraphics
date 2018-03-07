@@ -1014,7 +1014,9 @@ scene.add(clockHand);
 * draw a picture if it helps.
 * undo the transformation if we are not moving  to our goal.
 
-### Instancing is the idea that a single geometric set of triangles can be reused again and again. e.g for a lamp we might have different transforms for each bulb but htte bulbs all have the same mesh.
+### Quiz:Instancing 
+
+* Instanciationg is the idea that a single geometric set of triangles can be reused again and again. e.g for a lamp we might have different transforms for each bulb but htte bulbs all have the same mesh.
 
 * e.g reuse a cylinder
 
@@ -1267,3 +1269,155 @@ var theta = Math.acos(cylAxis.dot(new THREE.Vector3(0,1,0)));
 
 var theta = Math.acos(cylAxis.y);
 ```
+
+### Cross Product
+
+* for a tilted cylinder we were able to look at and think about axis we had torotate to.
+* usually this is not the case. if we have arbitrary vector and try to find quickly the axis of rotation it is imposible.
+* There is a quick way to get the axis of rotation, its called the cross product. [paper](http://graphics.cs.brown.edu/~jfh/papers/Moller-EBA-1999/paper.pdf)
+* in 3js its called like this
+
+```
+var rotationAxis = new THREE.Vector3();
+rotationAxis.crossVectors(cylAxis, new THREE.Vector3(0,1,0));
+```
+
+* it takes 2 vectors as its inputs, and the result is put into a 3rd vector. this vector is in fact the axis of rotation or at least one of them. the direction is deetermined by the right hand rule. we wrap our hand arount the first vector (cylinder) to the second vector (the y axis). our 4fingers poin to the axis of rotation, if we swap the 2 vector we get the oposite rotation axis.
+* the length of the cross product is proportional to the sin of the angle between the 2 vectors.
+
+* if the length of the corss product is zero or close to zero. the 2 vectors point to the same direction or the opposite direction. we can use then the dot product to figure out which case is true.
+* in this case the rotation axis  we get is 0,0,0 so no rotation axis at all. if they are oposite we choose arbitrarily one axis perpendicula to the vectors and use it for rotation. 
+
+```
+// special case: if rotationAxis is just about zero, set to X axis
+// so that the angle can be given as 0 or PI
+if(rotationAxis.length == 0) {
+		rotationAxis.set(1,0,0);
+}
+rotationAxis.normalize();
+```
+
+* Math notation: LENGTH(A X B) =sinθ x LENGTH(A) x LENGTH(B)
+* A -> (Ax,Ay,Az)
+* B -> (Bx,By,Bz)
+* A X B = (AyBz -AyBZ, AzBx-AxBz, AxBy-AyBx)
+
+* in the end we have a vector that represents the axis of rotation to go from vector a to vector b
+* this vector is perpendicular to these 2. we need to normalize it.
+
+### Quiz.Make an Ornament or Caltrops
+
+```
+var cylindren = new THREE.Mesh(
+ new THREE.CylinderGeometry(0.2,0.2,cylLength,32),cylinderMaterial);
+
+var rotationAxis = new THREE.Vector3(1,0,-1);
+// makeRotationAxis wants its axis normalized
+rotationAxis.normalize();
+// dont use position, rotation, scale
+cylinder.matrixAutoUpdate = false
+cylinder.matrix.makeRotationAxis(rotationAxis, theta);
+```
+
+* We implement our solution
+
+```
+// get two diagonally-opposite corners of the cube and compute the
+	// cylinder axis direction and length
+	var maxCorner1 = new THREE.Vector3(  1, 1, 1 );
+	var minCorner1 = new THREE.Vector3( -1,-1,-1 );
+	var maxCorner2 = new THREE.Vector3(1,1,-1);
+	var minCorner2 = new THREE.Vector3(-1,-1,1);
+ 	var maxCorner3 = new THREE.Vector3(1,-1,-1);
+	var minCorner3 = new THREE.Vector3(-1,1,1);
+	var maxCorner4 = new THREE.Vector3(-1,1,-1);
+	var minCorner4 = new THREE.Vector3(1,-1,1);
+	// note how you can chain one operation on to another:
+	var cylAxis1 = new THREE.Vector3().subVectors( maxCorner1, minCorner1 );
+	var cylAxis2 = new THREE.Vector3().subVectors( maxCorner2, minCorner2 );
+	var cylAxis3 = new THREE.Vector3().subVectors( maxCorner3, minCorner3 );
+	var cylAxis4 = new THREE.Vector3().subVectors( maxCorner4, minCorner4 );
+	var cylLength = cylAxis1.length();
+
+	// take dot product of cylAxis and up vector to get cosine of angle
+	cylAxis1.normalize();
+	cylAxis2.normalize();
+	cylAxis3.normalize();
+	cylAxis4.normalize();
+
+	var originalAxis = new THREE.Vector3(0,1,0);
+	var theta1 = Math.acos( cylAxis1.dot( originalAxis ) );
+	var theta2 = Math.acos( cylAxis2.dot( originalAxis ) );
+	var theta3 = Math.acos( cylAxis3.dot( originalAxis ) );
+	var theta4 = Math.acos( cylAxis4.dot( originalAxis ) );
+	// or just simply theta = Math.acos( cylAxis.y );
+
+	// YOUR CODE HERE
+	var cylinderGeometry = new THREE.CylinderGeometry( 0.2, 0.2, cylLength, 32 );
+	var cylinder1 = new THREE.Mesh(cylinderGeometry, cylinderMaterial );
+	var cylinder2 = new THREE.Mesh(cylinderGeometry, cylinderMaterial );
+	var cylinder3 = new THREE.Mesh(cylinderGeometry, cylinderMaterial );
+	var cylinder4 = new THREE.Mesh(cylinderGeometry, cylinderMaterial );
+	//var rotationAxis = new THREE.Vector3(1,0,-1);
+	var rotationAxis1 = new THREE.Vector3();
+	rotationAxis1.crossVectors(originalAxis,cylAxis1);
+	// makeRotationAxis wants its axis normalized
+	rotationAxis1.normalize();
+	var rotationAxis2 = new THREE.Vector3();
+	rotationAxis2.crossVectors(originalAxis,cylAxis2);
+	// makeRotationAxis wants its axis normalized
+	rotationAxis2.normalize();
+	var rotationAxis3 = new THREE.Vector3();
+	rotationAxis3.crossVectors(originalAxis,cylAxis3);
+	// makeRotationAxis wants its axis normalized
+	rotationAxis3.normalize();
+	var rotationAxis4 = new THREE.Vector3();
+	rotationAxis4.crossVectors(originalAxis,cylAxis4);
+	// makeRotationAxis wants its axis normalized
+	rotationAxis4.normalize();
+	// don't use position, rotation, scale
+	cylinder1.matrixAutoUpdate = false;
+	cylinder2.matrixAutoUpdate = false;
+	cylinder3.matrixAutoUpdate = false;
+	cylinder4.matrixAutoUpdate = false;
+	cylinder1.matrix.makeRotationAxis( rotationAxis1, theta1 );
+	cylinder2.matrix.makeRotationAxis( rotationAxis2, theta2 );
+	cylinder3.matrix.makeRotationAxis( rotationAxis3, theta3 );
+	cylinder4.matrix.makeRotationAxis( rotationAxis4, theta4 );
+	scene.add( cylinder1 );
+	scene.add( cylinder2 );
+	scene.add( cylinder3 );
+	scene.add( cylinder4 );
+```
+
+* teachers solution
+
+```
+var cylinderGeo = new THREE.CylinderGeometry( 0.2, 0.2, cylLength, 32 );
+for (var i=0;i<4;i++) {
+	var cylinder = new THREE.Mesh(cylinderGeo, cylinderMaterial );
+	var x = (i<2) ? -1 : 1;
+	var z = (i%2) ? -1 : 1;
+	var rotationAxis = new THREE.Vector3(x,0,z);
+	rotationAxis.normalize();
+	cylinder.matrixAutoUpdate = false;
+	cylinder.matrix.makeRotationAxis( rotationAxis4, theta );
+	scene.add(cylinder);
+}
+```
+
+### Rotation Times Rotation
+
+* a reason that we use a 4by4 transformation is that the matrix can hold any number of t ransformations at once.
+* e.g the Object3D rotation param. in the plane example we use th code
+
+```
+airplane.rotation.x = effectController.ex * Math.PI /180;
+airplane.rotation.y = effectController.ey * Math.PI /180;
+airplane.rotation.z = effectController.ez * Math.PI /180;
+```
+
+* the transformation order of this code is <= RxRyRZO
+* internally a Matrix4 transform matrix is made for each rotation. then they are multiplied together.
+* matrix multiplication is done as follows . e.g N=AxB where all are 4by4.
+* element N24 is caluclated by multiplying the 4row of A with the 2nd column of B : N24 = A14xB21+A24xB22+A34xB23+A44xB24
