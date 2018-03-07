@@ -1166,4 +1166,104 @@ scene.add(sphere);
 
 ### Matrix math
 
-* 
+* we now have a good ovverview of the trasformation offered by 3js. 3js does not offer additional trasformations. we need to know their innerworks and code if we want to program and parametrize the vertex and pixel shaders in the pipeline
+* using the chrome debugger isf we look into an Object3D object we will see a parameter called matrix.
+* it is of typoe Matrix4 with a lot of numbers in it.
+* this matrix holds the transform that changes the shapes shape,orientation and location. these changes are stoned in this array.
+* we can multiply a coordinate represented by a pointer vector, by multiplying the mattrix. ang get a new coordinate.
+* ANY OBJECT WE MAKE is represented by a bunch of points. 
+* these points are in the objects own sort of space
+* if we make a cube with cube geometry it is centered around a point(position). we can transform the cube points by a transfer matrix to move, rotate and scale as we desire.
+* a transform matrix is a 4x4 matrix. almost noone uses the Matrix3
+* 4x4 matrix is preferred by the GPU.
+* we can multiply a coordinate by a matrix: D = NC, D=[D1,D2,D3,D4], C=[C1,C2,C3,C4], N[4][4] = [N11,N21,N31,N41,N12...N44]
+* `D1 = N11*C1 + N21*C2+N31*C3+N41*C4; D2 = N12*C1+N22*C2+N32*C3+N42*C4; ...`
+
+### Points and Vectors Coordinates
+
+* points and vectors are mathematical entities representing locations and movements. 
+* when we give them coordinates we define where they are or where they move in comparison with a frame of reference. 
+* we use 3 coordinate values (x,y,z) for both point or vector.
+* till now if a set of coordinates represeneted a vector or a point was conceptual
+
+### The 4th Coordinate.
+
+* when using matrices, the way we differentiate points from vectors is by putting a 1 (point) or 0 (vector) to the 4th coordinate
+* this is an operation check when we use vector or point math.
+* V+V=V (0+0=0), V-V=V (0-0=0),P+V=P (1+0=1), P-P=V (1-1=0), P=P=ILLEGAL, V-P=ILLEGAL, 
+
+### Identity Matrix
+
+* the usual default setting for aq matrix is what is called the identity matrix. it has 1s in the diagonal and zeros everywhere. it is represented by I and it has the following property D=IC D=C. if we multiply a coordinate by this matrix we get  the same coordinate back.
+* when we create a matrix in 3js by this call `var mtx = new THREE.Matrix4();` is an identity matrix
+* if during our code run we wnat to reset the matrix to identoity we call `mtx.identity()`
+
+### Translation Matrix
+
+* if we want to change the location of a point, we use a translation matrix. 
+* this matrix has the translation movement put in the top three positions of the last column. the rest of the matrix is an identioty matrix. the multiplication that gives the new coordinates for the point are `Dx=Cx+Tx,Dy=Cy+Ty, Dz=Cz+Tz`
+* if we multiply a vector by this matrix we get the same vector back. a vector has no location and cannot be translated
+* the matrix notation we use is column-major form, there is also the row major form wehre points and vectors are rows and the translation matrix coordinates are storen in last row.
+* directx uses row major form , webGL uses column major form.
+* in memory matrices are stored in the same way (column after column for webgl, row after row in directx)
+* applying multiple translation matrices. the tranlation coordinates are added.
+
+### Using a matrix
+
+* to set a Matrix4 at constructor , we can pass ther values as arguments (16values) row by row. it is easier to the eye to align them to look like a coulmn major form matrix, 3JS as we said stores them in memory in its own way (column by column) and we can confirm that with the debugger
+* if we hust want to set a translation to the matrix we can use `mtx.makeTranslation(x,y,z);`
+* to apply a Matrix4 to an Object3D set the matrix property of Object3D = to he matrix already set as Matrix4. we also need to set matrixAutoUpdate property to falso to disable the Object3D build in transform (Posisition,Rotation and Scale)
+
+```
+var mtx = new THREE.Matrix4(); //identity matrix
+mtx.makeTranslation(x,y,z); 
+forearm.matrix = mtx;
+forearm.matrixAutoUpdate = false;
+```
+
+### Rotation Matrix
+
+* there are many ways to form rotation matrices. 
+* arotation around the Z-axis is done by adding to an identity matrix the cosθ and sinθ in the first column top positions and -sinθ and cosθ in the second column top poisitions. z coordinate is left untouched as we rotate around z. the rotation is ccw. we can understand it as rotating the point vecor by θ or by turning the frame of reference by θ and calculating the new x, y so that the point vector has length of 1
+* the dot product of the point coordinates and the rotation axis gives the new location
+* 1st ew rotate the point and see its new coordinates.2nd we rotate the axis and see the points coordinates to the new axis (dot product of point vector and axis vectror)
+
+### Dot Product
+
+* the whole definition for the dot product is the following. AdotB = (cos of angle between A and B)x(Length of A)x(Length of B). this is the dot product for non-normalized vectors
+* we can think of a coordinate as moving due to the rotation or staying still and being recalculated for a new set of axes. the 3 coordinate axes are called the basis
+
+### Quiz: Axis of Rotation
+
+* there is a easy way to add axis/angle rotation to a Matrix4 using `mtx.makeRotationAxis(axis, theta)`
+* our cube has faces of length=2 and is centred on the frame od reference. we want the cylinders on the diagonals of the cube. step  1, find out around which axis to rotate, step b define the angle,
+* the answer is -x and z
+
+### Angle of Rotation
+
+* i have my angle of rotation, its -x,z
+* i need the angle of rotation and the cylinders lengt
+* the 3js code to calculate the length of the cylinder is
+
+```
+// get two diagonally-opposite corners of the cube
+// and compute the cylinder axis direction and length
+var maxCorner = new THREE.Vector3(1,1,1);
+var minCorner = new THREE.Vector3(-1,-1,-1);
+
+var cylAxis = new THREE.Vector3();
+cylAxis.subVectors(maxCorner,minCorner);
+var cylLength = cylAxis.length();
+```
+
+* we need the angle of rotation
+
+```
+//take dot product ofcylAxisand Up vector to get cosine of angle
+cylAxis.normalize();
+var theta = Math.acos(cylAxis.dot(new THREE.Vector3(0,1,0)));
+
+//or 
+
+var theta = Math.acos(cylAxis.y);
+```
