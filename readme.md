@@ -1421,3 +1421,40 @@ airplane.rotation.z = effectController.ez * Math.PI /180;
 * internally a Matrix4 transform matrix is made for each rotation. then they are multiplied together.
 * matrix multiplication is done as follows . e.g N=AxB where all are 4by4.
 * element N24 is caluclated by multiplying the 4row of A with the 2nd column of B : N24 = A14xB21+A24xB22+A34xB23+A44xB24
+* this multilplication is the dot product
+* so the 3 rotations are 3 matrices multiplied together in 2 steps. 
+* we can multiply T or S matrices.
+* the standar order of Object3D transformations  is <= TRxRyRzO = M0 M is the Matrix of object. this practice of multiplying matrices is called concatenation
+
+### World matrix
+
+* We can chain together aor matricces that affect an object.
+* Car(Mc=TRS) has Wheel(Mw=TRS) has Hubcap (Mh=TRS)
+* The World matrix of Hubcap is W=McMwMh as is the product of the Matrices of its parents and itself. world matrix is called also model matrix
+
+### Quiz: Series of Operations
+
+* R=RxRyRz (R is a rotation matrix itself).a product of rotation matrices is a rotation matrix.
+* the product of series of translation matrices is translation matrix
+* the product of series of scale matrices is scale matrix
+
+### Frames [insight](http://www.realtimerendering.com/blog/two-ways-to-think-about-transforms/)
+
+* In previous lessons we have seen that the order of transforms for an object is usually rotate and then translate. also the notation is TR as the transformation are writen right left
+* if we first translate then rotate we get a different scene. the notation is RT.
+* another way of looking at it is that every transformation changes the frame of reference. e.g rotation rotates it and translation moves it.
+* first transformation changes the frame of reference that transformations to the right of it will use. then the trasformation transforms the object in relation to this frame of reference, coordinates  are always in reference to a point of reference.
+* world space is the global point of reference but in out transformations we use model space and then transform it to world space.
+* in a parent child relationship, child is oriented in respect to the parent and then transformed to world space
+* if we put a transfromation after the orher we transform with respect of the view of the world of the previous transform,ation
+* first matrix to the right of a given set of transformation matrices transfrorms the object with respect to the ranformations to the left (wtf ?!? it should be th eoposite). actually he derives this from MxMwMh so that h transforms in relation to the parents (on the left) fram of reference.
+* You may want to try the Euler angle demo in Lesson 4 again to see how the X rotation controls the other two rotations, since it is applied last. By changing X, you change the frame of reference for how Y and Z rotation are applied.
+
+### Scale matrix and normal
+
+* A scale matrix is an identity matrix with the 1s (except the last one) multiplied by the scale factor. the 11 element is Sx factor , the 22 element the Sy factor and the 33 element the Sz factor.
+* scaling can mess up normals. we are no jst transforming points with Matrices, we are transforming shading normal as well
+* running normals through a traslation matrix leaves them unaffected. they are vectors. also a rotation matrix do not affect them as they are rotated to the new frame of reference.
+* if we uniformally scale an object with the matrix the normals are scaled to . we need to r enormalize them before using them
+* if we non-uniformalyy scale objectts the normal vector gets stretched in one direction and is not perpendicular any nmore. 
+* to solve the problem we need to inverse and transpose a matrix.
