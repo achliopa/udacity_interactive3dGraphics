@@ -1458,3 +1458,202 @@ airplane.rotation.z = effectController.ez * Math.PI /180;
 * if we uniformally scale an object with the matrix the normals are scaled to . we need to r enormalize them before using them
 * if we non-uniformalyy scale objectts the normal vector gets stretched in one direction and is not perpendicular any nmore. 
 * to solve the problem we need to inverse and transpose a matrix.
+
+### Transpose and Inverse
+
+* Matrix Transpose (M^T) with its columns and rows flipped along the diagonal. another way to define it is that its columns become the rows of the transposed matrix.
+* the inverse of the matrix has the following property: (Matrix M)(Inverse of Matrix M) = Identity Matrix (MM-1) = I
+* the inverse of a transform matrix undoes its effects
+* inverse of a translate matrix with Tx,Tx,Tz is the same byt with -Tx,-Ty,-Tz undoing its effect.
+* for rotation matrix the inverse is the transpose matrix.
+* for scale matrix the inverse is multiplicative inverse.
+* the inverse of a matrix represinting various transformations is not obvious.
+* all graphics libs have matrix inverse: `Matrix4.getInverse(mtx)`
+
+### Correct Normal Transformation
+
+* we have aproblem with transforming normal when using non-uniform scaling matrices. in that case we need to use the transpose of the inverse of the Transformation matrix (TI) or the invers of the transpse (IT)
+* if thr transform matirx is transaltion we dont care as it does not affect vectors
+* if it is a rotation matrix the transpose is inverse. so the transpose of the inverse so the inverse of the inverse so the same matrix. 
+* for scale if it is uniform we just normalize again the normal as it will be scaled.
+* the traspose of the nverse is based on contravariant and covariant vectors.
+
+### Mirroring
+
+* a transformation matrix worth mentioning is the mirroring matrix. it is an identity matrix where one of the diagonals is -1 and the rest 1. the object is mirrored allong the axis that is -1. another way is by `mtx.scale.z = -1;`
+* a problem is that the order of faces is reversed so if we use backface culling we need to reverse it or we will have problem. if the order is ccw i nthe mirrored is cw
+* so if we the original frame is right-handed the mirrored is left-handed.
+* to see if an obect uses mirroring we use: `if(mtx.determinant()<0){console.log("mirror used");}`
+
+### Quiz: Mirror Normal Transform
+
+* what happens to normals if they transformed by the same mnirroring matrix used for transforming points? all the time
+
+### Matrix ZOnes
+
+* the upper left 3by3 part of the 4by4 transformation matrix contains the linear transformation (rotations and scales). multiplication and addition is preserver in the linear part
+* the upper right corner (3by1 column) holds the translations. translation  values get affected by multiplications with other matrices. translations affect only points.
+to extract T,R,S from a matrix in 3js we use `mtx.decompose(t,r,s)` t and s are returned as vectors, r as a quaternion ( we will learn abou it in animation). quaternion is a compact way to store the angle and axis of rotation for a rotation matrix. quaternions can be easily interpolated between tehm. to interpolate between different rotations.
+* bottom row is always 0,0,0,1. the trasforms we lokked into in this chapter are affine transforms. parallel lines stay parallel when affine transformations are applied. in modeling we always use affine trasforms
+* when we use perspective cameras we use the last row which we call projective transform
+
+### Summary
+
+* webgl and 3js are in column order
+* TRSO - we apply transform matrices right to left
+* frame of reference is applied left to right
+* (ΤR)S=T(RS)  matrices are associative
+* TR != RT marices are not (usually) commutative
+
+## Lesson 12 - Problem Set
+
+### 1.Quiz:Transpose of a Translation
+
+* the transpose of a translation matrix is a projective matrix
+
+### 3.Quiz: Cylinder Positioning
+
+* 3JS creates canonical objects. this is when you create an object around a point of origin and use transformations to move it into position.
+* for some kinds of modeling we need another apporach. id we want a chain of cones to build a tree. we need to define where the end of each cone will be located. this type of modeling when we ganerate an object with a program is called procedural moeling.
+* in the cullen routine the top and bottom variables are  are Vector3 positions given the ends of the cone. we will have descriptions for other vars in the code. this function has a special case o the cross product.
+* we have to create the proper length cylinder and feed this method its axis direction and center.
+
+* my solution
+
+```
+// Dummy settings, replace with proper code:
+	var length = new THREE.Vector3().subVectors(top,bottom).length();
+	var cylAxis = new THREE.Vector3().subVectors(top,bottom).normalize();
+	var center = new THREE.Vector3(bottom.x + (top.x-bottom.x)/2,bottom.y + (top.y-bottom.y)/2,bottom.z + (top.z-bottom.z)/2);
+```
+
+* teachers solution
+
+```
+// get cylinder height
+var cylAxis = new THREE.Vector3();
+cylAxis.subVectors(top,bottom)
+var length = cylAxis.length();
+
+// get cylinder center for transaltion
+var center = new THREE.Vector3();
+center.addVectors(top,bottom);
+center.divideScalar(2.0);
+```
+
+### 4.Quiz: Capsule
+
+* once we sorted out how to place cones and cylinders, a handy method to write is one that creates capsules (cheese logs). capsule is a cylinder with a sphere covering eachend
+* we use instance. one geometry object for each end
+
+* Mycode
+
+```
+	// YOUR CODE HERE
+	// Here's a sphere's geometry. Use it to cap the cylinder if
+	// openTop and/or openBottom is false. Bonus points: use instancing!
+	var sphGeom = new THREE.SphereGeometry( radius, segmentsWidth, segmentsWidth/2 );
+	for(var i=0;i<2;i++) {
+		var sphere = new THREE.Mesh(sphGeom, material);
+		if(i%2) {
+			if(!openTop) {
+				sphere.position = top;
+				scene.add(sphere);
+			}
+		} else {
+			if(!openBottom) {
+				sphere.position = bottom;
+				scene.add(sphere);
+			}
+		}
+```
+
+* teachers solution
+
+```
+var capsule = new THREE.Object3D();
+capsule.add( cyl );
+if ( !openTop || !openBottom ) {
+    // instance geometry
+    var sphGeom = new THREE.SphereGeometry( radius, segmentsWidth, segmentsWidth/2 );
+    if ( !openTop ) {
+        var sphTop = new THREE.Mesh( sphGeom, material );
+        sphTop.position.set( top.x, top.y, top.z );
+        capsule.add( sphTop );
+    }
+    if ( !openBottom ) {
+        var sphBottom = new THREE.Mesh( sphGeom, material );
+        sphBottom.position.set( bottom.x, bottom.y, bottom.z );
+        capsule.add( sphBottom );
+    }
+}
+return capsule;
+```
+
+### 5.Quiz:Helices
+
+* once we have capsules in our arsenal we can make all sorts of stringy objects. 
+* we have helices of spheres. our goal is to make helices of capsules
+* where two capsules touch we make one sphere not 2.
+* also wemake sure that both ends of helix have spheres on them.
+* we should not compute both points for each capsule in each loop iteration
+* its more efficient if on each iteration we compute one of the points.
+* we can increase radial segment to make them smoother
+* my solution
+
+```
+	var top = new THREE.Vector3();
+	var prevTop = new THREE.Vector3();
+	var sine_sign = clockwise ? 1 : -1;
+	var capsule
+
+	///////////////
+	// YOUR CODE HERE: remove spheres, use capsules instead, going from point to point.
+	//
+	var sphGeom = new THREE.SphereGeometry( tube, tubularSegments, tubularSegments/2 );
+	for ( var i = 0; i <= arc*radialSegments ; i++ )
+	{
+		prevTop.copy(top);
+		// going from X to Z axis
+		top.set( radius * Math.cos( i * 2*Math.PI / radialSegments ),
+		height * (i/(arc*radialSegments)) - height/2,
+		sine_sign * radius * Math.sin( i * 2*Math.PI / radialSegments ) );
+		if(i<=0) {
+			var sphere = new THREE.Mesh( sphGeom, material );
+			sphere.position.copy( top );
+			helix.add( sphere );
+		} else {
+			console.log(top,prevTop);
+			capsule = new createCapsule(material, tube, top , prevTop , tubularSegments, false, true);
+			helix.add(capsule);
+		}
+	}
+
+```
+
+* teacher solution
+
+```
+var helix = new THREE.Object3D();
+var bottom = new THREE.Vector3();
+var top = new THREE.Vector3();
+var openBottom = false;
+var openTop = false;
+var sine_sign = clockwise ? 1 : -1;
+bottom.set( radius, -height/2, 0 );
+for ( var i = 1; i <= arc*radialSegments ; i++ )
+{
+    // going from X to Z axis
+    top.set( radius * Math.cos( i * 2*Math.PI / radialSegments ),
+        height * (i/(arc*radialSegments)) - height/2,
+        sine_sign * radius * Math.sin( i * 2*Math.PI / radialSegments ) );
+    var capsule = createCapsule( material, tube, top, bottom, tubularSegments, openTop, openBottom );
+    helix.add( capsule );
+    // after first capsule is laid down, don't need to draw sphere for bottom.
+    openBottom = true;
+    // make top of previous capsule the bottom of the next one
+    bottom.copy( top );
+}
+return helix;
+```
+

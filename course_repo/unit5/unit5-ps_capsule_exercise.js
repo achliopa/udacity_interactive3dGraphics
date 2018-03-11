@@ -50,7 +50,22 @@ function createCapsule( material, radius, top, bottom, segmentsWidth, openTop, o
 	// Here's a sphere's geometry. Use it to cap the cylinder if
 	// openTop and/or openBottom is false. Bonus points: use instancing!
 	var sphGeom = new THREE.SphereGeometry( radius, segmentsWidth, segmentsWidth/2 );
+	for(var i=0;i<2;i++) {
+		var sphere = new THREE.Mesh(sphGeom, material);
+		if(i%2) {
+			if(!openTop) {
+				sphere.position = top;
+				scene.add(sphere);
+			}
+		} else {
+			if(!openBottom) {
+				sphere.position = bottom;
+				scene.add(sphere);
+			}
+		}
 
+		 	
+	}
 	// You'll probably want to return something other than this...
 	return cyl;
 
