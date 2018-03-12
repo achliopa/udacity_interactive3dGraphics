@@ -1618,7 +1618,7 @@ return capsule;
 		top.set( radius * Math.cos( i * 2*Math.PI / radialSegments ),
 		height * (i/(arc*radialSegments)) - height/2,
 		sine_sign * radius * Math.sin( i * 2*Math.PI / radialSegments ) );
-		if(i<=0) {
+		if(i<=0) {w
 			var sphere = new THREE.Mesh( sphGeom, material );
 			sphere.position.copy( top );
 			helix.add( sphere );
@@ -1657,3 +1657,97 @@ for ( var i = 1; i <= arc*radialSegments ; i++ )
 return helix;
 ```
 
+* note that we cannot just copy points with = as this copies memory position. we must use `newpoint.copy(oldPoint)` 
+
+### 6.Quiz:Revisiting the Drinking Bird
+
+* add eyes , nose and crossbar to the bird
+
+```
+	// YOUR CODE HERE
+	// Add a crossbar support, a nose, and eyes.
+	// Crossbar: use crossbarMaterial and
+	//   THREE.CylinderGeometry( XX, XX, XX, 32 ) for the tessellation.
+	//   The cylinder should have a radius of 5, length 200 and be at height Y=360
+	//   and rotated 90 degrees into position.
+	cylinder = new THREE.Mesh(
+		new THREE.CylinderGeometry(5,5,200,32), crossbarMaterial);
+	cylinder.position.y = 360;
+	cylinder.rotation.x = Math.PI/2;
+	scene.add(cylinder);
+	// Nose: use headMaterial and
+	//   THREE.CylinderGeometry( XX, XX, XX, 32 ) for the tessellation.
+	//   The cone should have a radius of 6 at the tip, 14 at the bottom, height 70
+	//   It should be rotated 90 degrees and put into position at -70, 530.
+	cylinder = new THREE.Mesh(
+		new THREE.CylinderGeometry(6,14,70,32),headMaterial);
+	cylinder.rotation.z = Math.PI/2;
+	cylinder.position.x = -70;
+	cylinder.position.y = 530;
+	scene.add(cylinder);
+	// Eyes: use eyeMaterial and
+	//   THREE.SphereGeometry( XX, 32, 16 ) for the tessellation.
+	//   Each sphere should have radius of 10 and be moved to X=-48, Y=560,
+	//   then rotated 20 degrees left and right to make a pair.
+	var spherGeom = new THREE.SphereGeometry( 10, 32, 16 );
+	for(var i=0;i<2;i++)  {
+		sphere = new THREE.Mesh(spherGeom,eyeMaterial);
+		sphere.position.x=-48;
+		sphere.position.y= 560;
+		var eye = new THREE.Object3D()
+		eye.add(sphere);
+		(i%2)? eye.rotation.y = Math.PI/9:eye.rotation.y = -Math.PI/9;
+		scene.add(eye);
+	}
+```
+
+* remember that to twist the order of trasformation we must use OBject3D wrapper
+
+## Lesson 13 - Lights
+
+### Photons as Particles
+
+* photons are emitted by light source, are reflected or absorbed on surfaces and are ariving to the eye. 
+* even mirror does not reflect 100% the photons. only 90,95%
+* light is absorbed in its way by water drops, dust, particles in the air
+* a simple light model ignores effects like polarization or fluorescence.
+* we allow light filters to alter the color.
+
+### Directional Lights
+
+* light emitters can have any form as the effect of light is computed invertex or fragment shading.
+* the simplest form of light is the directional light.
+* this type of light is described only by the direction vector
+* a real directional light is the sun. it is considered infinite far away and the direction to the sun is the same for every object on earth.
+* in 3js the directional light is a light point we can move around. in reallity we change the direction vector not the location of the light.
+* in some libraries we can set negative value to light intensity as it absorbs light from objects
+* in 3JS we use light intesity between 0 and 1. over 1 is acceptable but beyond monitor abilities.
+
+### Directional Lights in Three.JS
+
+* a sample code to add a directional light
+
+```
+var light = new THREE.DirectionalLight(0xFFFAAD, 0.7); //set light color and intensity
+light.position.set(200,500,600); // set light position in scene in realtion to frame of reference, actually the light direction vector from position to origin (0,0,0)
+scene.add(light);
+```
+
+### Quiz: Set Directional Light
+
+```
+	var light = new THREE.DirectionalLight(0xFFFFFF, 1.5); 
+	light.position.set(-200, 200, -400); 
+	scene.add(light);
+```
+
+### A point light
+
+* for a point light we define a position in space and it emmits light in all directions. we set color and intensity like directional light
+* its different from real world light as dsistance does not affect brightness. attenuation is not done for sake of vision. its easier to see a scene with point lights if there is no drop off with distance.
+* we can use equations for how light is attenuated with distance.
+* 3JS supports only one drop off mode, defien maximum distance. it turns light o zero
+
+### Ambient Lighting
+
+* 
