@@ -1750,4 +1750,110 @@ scene.add(light);
 
 ### Ambient Lighting
 
+* ambient light in reality drops off at the square of the distance. we dont use that as in artificial scene light doesnt bounces off , only lights what it hits.
+* in 3js scen we create artificial indirect illuminations with ambinet light `scene.add(new THREE.AmbientLight(0x222222);` . this is a fudge factor
+* the ambient color is blended with the materials ambient color to give a solid fill color
+
+```
+var someMaterial = new THREE.MeshLambertMaterial();
+someMaterial.color.setRGB(0.8,0.2,0.1);
+someMaterial.ambient.copy(someMaterial.color);
+```
+
+* if dont add ambient color to matrial the default is white and scene ambient will add grey to the object.
+* its better if material ambient color matches the diffure color.
+
+### Quiz:Head Light
+
+* replace the ambient light in drinking bird scene with poiint light
+
+```
+var light = new THREE.PointLight(0xFFFFFF, 1.0);
+light.position.set(1000,1000,1000);
+scene.add(light);
+```
+
+* we want to place the pointlight at camera position (like miner's light)
+* the function below is called every time a new image is to be rendered(e.g when we move the camera)
+* both camera and light derive from Object3D. so we copy position before render. `headlight.position.copy(camera.position);`
+
+```
+function render() {
+	var delta = clock.getDelta();
+	cameraControls.update(delta);
+	renderer.render(scene,camera);
+}
+```
+
+### Spot Light
+
+* in 3js a spotlight is similar to real world. you shine this type of light on sthing to make it the center of attention.
+* it is like apoint light because it has a position. 
+* it is like directional like because it points somewhere.
+* its difference is the cone of light it forms. the control parameter in3js is the angle where the cone ends (spotlight). also there is a fall off exponent like a specular light. as we increase it the light gets tighter
+* id 3dstudio max spotlight it has a double cone with inner cone called hotspot.
+* in 3js there only 1 ambient light but as many spotlights,pointlights and directional lights we want.
+
+### Quiz: SpotLight in 3JS
+
+* replace drinking biird scene directional with a spotlight: (color: full white, intesity: 1.5, location: -400,1200,300 , angle: 20deg, expo: 1, target position: 0,200,0)
 * 
+
+```
+	var light = new THREE.SpotLight( 0xFFFFFF, 1.5);
+	light.position.set( -400, 1200, 300 );
+	light.angle = Math.PI/9;
+	light.exponent = 1;
+	light.target.position.set(0,200,0);
+	scene.add( light );
+```
+
+### Deferred Rendering
+
+* having more and more lights takes a toll the GPU. each light must be evaluated for surface shading. 
+* a solution to it is deferred rendering
+* normally we render a surface, and the fragment color for each pixel is stored, if its the closest visible object. this is forward rendering.
+* in deferreed rendering we store data of some sort in each pixel.
+* there are variations with nameslike defered shading or defered lighting.
+* a variation stores position,normal, material color and shininess at each pixel. we also draw in the z-buffer
+* with defered buffering every point light has an upper limit of how far its light goes. this forms a sphere around the light
+* each surface that is in the sphere is affected by the light. other shapes are used too,
+
+### Shadow mapping
+
+* an objects shadow established its location in respect to surroundings
+* rasterization focuses on triangles rendered from the eye. we have to eork to generate shadows
+* a technique is shadow mapping. the scene gets rendered from the point of view of the light. what the light sees is lit. if the light doesnt see the surface it is in shadow.
+* in 3js the only lights capable of casting shadows are spotlights and directiona lights. for directional lights we specify how the light extends.
+
+### Quiz: ShadowBuffer Characteistics.
+
+* Shadow map algorithm creates a shadow image of a scene from the lights view called shadow buffer. the image is like a z-buffer
+
+### Shadows in 3JS
+
+* to enable shadows in 3jS. we enable shadow map in render and tell spotlight to cas shadows. for each object we have choice to cast or not shadow. and receive or not shadows from other objects. 
+* this has to be done on each geometry/mesh not on the parent element (e.g Object3D)
+* 3JS has traversal method to go through an object and its children and enable them in batch
+
+```
+renderer.shadowMapEnabled = true; 
+spotlight.castShadow = true;
+cube.castShadow = true;
+cube.receiveShadow = true;
+
+bbird.traverse(function (object) {
+	object.castShadow = true;
+	object.receiveShadow = true;
+});
+
+// better traverese
+bbird.traverse(function (object) {
+	if(object instanceof THREE.Mesh) {
+		object.castShadow = true;
+		object.receiveShadow = true;
+	}
+});
+```
+
+* its a good practice for testing to render the light source.

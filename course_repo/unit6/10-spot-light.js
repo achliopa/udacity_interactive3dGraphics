@@ -25,6 +25,7 @@ function fillScene() {
 	headlight = new THREE.PointLight( 0x606060, 1.0 );
 	scene.add( headlight );
 
+
 	///////////////////////////////////
 	// Student: change the following directional light to a spotlight,
 	// color full white, intensity 1.5
@@ -33,10 +34,13 @@ function fillScene() {
 	// exponent 1
 	// target position 0, 200, 0
 
-	var light = new THREE.DirectionalLight( 0xFFFFFF, 1.5 );
-	light.position.set( -200, 200, -400 );
+	var light = new THREE.SpotLight( 0xFFFFFF, 1.5);
+	light.position.set( -400, 1200, 300 );
+	light.angle = Math.PI/9;
+	light.exponent = 1;
+	light.target.position.set(0,200,0);
 	scene.add( light );
-
+	
 	var solidGround = new THREE.Mesh(
 		new THREE.PlaneGeometry( 10000, 10000 ),
 		new THREE.MeshPhongMaterial({ color: 0xFFFFFF,
