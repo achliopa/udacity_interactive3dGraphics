@@ -1993,7 +1993,22 @@ function render() {
 
 ### 4.Quiz: Ligtht Characteristics
 
-* ambient
-* directional
-* point (positional)
-* spot
+* ambient: color
+* directional: color,intensity,direction
+* point (positional), color,intensity
+* spot: color,intensity,direction
+
+### 5.Quiz.Disapearing SPotlight
+
+* in the spotlight exercise. the surface has shadow and sptlight umbra. this is a Phong material. if we change to lambert spotlight sdisapears, shadow remains. this is because spotlight is evaluated per vertex not pixel. lambert is evaluated per vertex. surface has 4 corners outside the spotlight so in lambert is skipped. we can fix that with many triangles in surface but thats process expensive
+
+## Lesson 15 - Cameras
+
+### Intro to cameras
+
+* there are different ways to view the world. fisheye lens, perspective view and orthographic  projection
+
+### Orthographic Projection
+
+* like a 2d cad. a 3d projection in 2d. like cad views. its not like we usually percieve the world, it can create optical illusions.
+
