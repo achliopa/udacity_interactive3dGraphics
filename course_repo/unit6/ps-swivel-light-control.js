@@ -18,9 +18,6 @@ function fillScene() {
 	scene.add( new THREE.AmbientLight( 0x222222 ) );
 
 	light = new THREE.DirectionalLight( 0xFFFFFF, 1.5 );
-	light.position.set( 1, 1, 0 );
-
-	scene.add( light );
 
 	// MATERIALS
 	var headMaterial = new THREE.MeshLambertMaterial( );
@@ -256,6 +253,8 @@ function animate() {
 function render() {
 	var delta = clock.getDelta();
 	cameraControls.update(delta);
+	light.position.set( Math.cos(effectController.angle*Math.PI/180), 1, Math.sin(effectController.angle*Math.PI/180));
+	scene.add( light );
 	renderer.render(scene, camera);
 }
 

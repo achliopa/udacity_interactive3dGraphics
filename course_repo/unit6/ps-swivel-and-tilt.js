@@ -18,9 +18,7 @@ function fillScene() {
 	scene.add( new THREE.AmbientLight( 0x222222 ) );
 
 	light = new THREE.DirectionalLight( 0xFFFFFF, 1.5 );
-	light.position.set( 1, 1, 0 );
 
-	scene.add( light );
 
 	// MATERIALS
 	var headMaterial = new THREE.MeshLambertMaterial( );
@@ -256,6 +254,13 @@ function animate() {
 function render() {
 	var delta = clock.getDelta();
 	cameraControls.update(delta);
+	// altitude
+	light.position.y = Math.sin( effectController.altitude * Math.PI/180.0 );
+	// azimuth
+	var length = Math.sqrt(1 - light.position.y*light.position.y);
+	light.position.x = length * Math.cos( effectController.azimuth * Math.PI/180.0 );
+	light.position.z = length * Math.sin( effectController.azimuth * Math.PI/180.0 );
+	scene.add( light );
 	renderer.render(scene, camera);
 }
 

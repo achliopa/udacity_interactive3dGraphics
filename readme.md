@@ -1857,3 +1857,143 @@ bbird.traverse(function (object) {
 ```
 
 * its a good practice for testing to render the light source.
+* solution:  add this line of code after creating the renderer in init(): renderer.shadowMapEnabled = true; In fillScene(), add this line after creating the spotlight: spotlight.castShadow = true; And add this line after creating solidGround: solidGround.receiveShadow = true;
+
+### Shadow Buffer Limitations
+
+* [summary](http://resources.mpi-inf.mpg.de/ShadowCourse/)
+* [techniques](http://codeflow.org/webgl/shadow-mapping/)
+* with shadows we see patterns on the objects which are intense when the light is brighter.
+* shadow mapping algo works by seeing the world by the lights point of view. the depth image form is then checked  during normal rendering. the depth of the surface visible at a point is compared with the transformed depth  of the shadow map buffer holds. this creates trouble.
+* the pixels of the  lights view don match entirely with the camera view.
+* this creates surface acne (black patches on a surface)
+* the ligh view says the surdface is 3.8m away of the light, the camera view says the surface is 3.81m away from light, as 3.81>3.8 the surface is considered in shadow
+* a solution is shadow bias. this has a peter pan effect with the object detaching from its shadow.
+
+### Ray Tracing
+
+* so far we have implemented local illumination models where the object is affected by light and the result is sent to the eye. light comes only from light sources, no loght is reflected from other objects.
+* there are many more light tracks that can be tracked.
+* a rendering technique that simulates this is called ray tracing.
+* [demo](http://hoxxep.github.io/webgl-ray-tracing-demo/)
+* we saw how GPU sent each triangle to screen and rasterizes it.
+* ray tracing fires rays from the eye through each pixel. objects are tested against each ray. the closest object found across the rays path is the one used to compute the ray color contribution.
+* we can think of each ray from the eye as rendering one by one pixel.
+* to find the closest object to this pixel is to send every triangle to the pipeline and try to rasterize it and use z-buffer fro finding closest object. this is SLOW.
+* reaserch tried to optimize finding the closest object along the ray
+* rasterization is fast because each triangle covers many pixels.
+* in its simplest form ray tracing is similar to rasterization. ech ray finds the losest object along it. the effect of ligh on the surface s computed, result is displayed. for light to pass we assume that other objects dont block or reflect light
+* to add shadows with ray tracing we shoot  a ray from object to the light. if it finds an object blocking light is ignored. 
+* ray tracing enables to create true reflection in glass effects. for shining surfaces we spawn a ray in the direction of light reflection, what his ray hits is whats reflected in the surface. we spawn rays untill we hit a limit (WTF?!?)
+
+### Ray Tracing history and limit
+
+* many algorithms, paul herbert, [256byte tube](http://www.pouet.net/prod.php?which=3397) [mr.doob interview](http://www.realtimerendering.com/blog/interview-with-three-js-creator/)
+
+### Quiz:What is missing
+
+* ligt->object-diffuse object, light->mirror->object
+
+### Path Tracing
+
+* one way to track the various ways the light can take to reach the eye, is to shoot more rays per pixel, bounce them around in hope of finding light sources. this is called path tracing.
+* it is noisy to begin with but gives good results given the time.
+* [demo](http://madebyevan.com/webgl-path-tracing/)[wiki](https://en.wikipedia.org/wiki/Path_tracing)
+* this demo uses progressive rendering, shooting more and more rays and blending the result.
+* [photon mapping](https://en.wikipedia.org/wiki/Photon_mapping)[minecraft](http://www.realtimerendering.com/erich/minecraft/public/chunky/jpegs/)
+* a pure path tracer is stragihtforward. we shoot more rays in sensible directions and sum up ther light contributions found. we shoot 10^5 rays per pixel or more. the more processing the better quality. photon maPPING and bidirectional traCINGtry to get the best of both worlds. the idea is to send rays from light emitters using rays depositing radiance where rays reach. scene is retraced from acamera point of view and light is gathered. path tracing can give uparallel realism given the the time. it is an actual light simulation,
+
+### Umbra and Penumbra
+
+* basic shadow techiques miss how lights trully cast shadows. all lights have an area. but shadow mapping assumes that light comes from a point far away. unless light is indeed a point (no bulb diffusion)
+* the real shadow behind the object is umbra. it is when the light cone between object and light area is cut by surface, the area tha is not fully lit nor shadowed is penumbra.
+*  in a point of penumbra tge light that is visible correlates to how much light the location receives. so we set a vector of the point to one edge of area light and the other to the line defined by the point and object surface. this vector splits the light area in 2,. the area of light forming a cone to the point is the %
+
+### David Larsson Intro
+
+* developer of beast engine for games. (also in demo scene). illumination labs.
+
+### Shadow Summary
+
+* soft shadows are closer to reality (umbra, penumbra). when light close to ocluder more hard shadows.
+
+### Indirect Lighting
+
+* if you look at the shadows in this scene we see they are completely black. this is wrong., in reality nothing is completely black. we add ambient light to compensate for that. with ambient light shadows still look flat. objects are not distinguishable.
+* what we see is the light from light sources reflected into our eyes. but only a fraction of the light reflected on surfaces.
+* this bounced indirect lighting is important to the scene. with it simulated the scene looks realistic. light bounce from surface to surface while reflecting. with each bounce the light gets weaker.
+* a surface absorbs all but the component of light of its color which gets reflecgted.
+
+### Global illumitaion
+
+* global illumination is when one object affects others appearancce.
+
+### Hemisphere lights
+
+* one light source in 3JS that attempts to simulate the surrounding bounced light in scene is the hemisphere light. it is considered as surrounding the scene lighting from every direction.
+* it is like ambient light but: we assign a different color to the top and a different to the bottom.
+* each objects normals determine the color light it receives from this source. any direction between top and vbottom gives a blend of the two colors. ( an  elaborate type of it is diffuse map)
+
+### Skylighting.
+
+* a light we take for granted and not consider it as a source is the sky. in outdoor scen it gives the ambient light.
+* in simulation shadows take a blue touch. without sun sky shadow is dark blue
+* in most scenes treat sun and sky as two different cointributors. sky color sets mood. 
+* proper sky in interactive scenes is hard and performance expensivce
+
+### Fog 
+
+* a phenomenon between camera effect and light is fog. in real life fog is light absorbed and diffused by the atmosphere.
+* inb 3JS we have 2 forms of fog. linear fog (min distance=fog starts, max distance = fog covers all). or exponential. we specify density particles. a demo called god rays (beams of light)
+* [godrays](https://github.com/mrdoob/three.js/blob/master/examples/js/ShaderGodRays.js)
+* [demo](https://threejs.org/examples/#webgl_geometry_terrain_fog)
+
+## Lesson 14
+
+### 1.Quiz:Omni Light
+
+* omni light in 3JS is a point light
+
+### 2.Quiz:Swivel Light Control
+
+* vary the light x and z direction by the cosine and sine of the angle
+
+```
+function render() {
+	var delta = clock.getDelta();
+	cameraControls.update(delta);
+	light.position.set( Math.cos(effectController.angle*Math.PI/180), 1, Math.sin(effectController.angle*Math.PI/180));
+	scene.add( light );
+	renderer.render(scene, camera);
+}
+```
+
+* note we need to add a parametrical code in render that gets called when we change parameters.
+
+### 3.Quiz:Swivel and Tilt Light COntrol
+
+* the lights direction x^2+y^2+y^2=1   (cosθ)^2+(sinθ)^2=1
+* in astronomy altitude is the vertical angle from the observerbetween horizon and star. azimuth is the horizontal angle on horizon from north to star
+
+```
+function render() {
+	var delta = clock.getDelta();
+	cameraControls.update(delta);
+	// altitude
+	light.position.y = Math.sin( effectController.altitude * Math.PI/180.0 );
+	// azimuth
+	var length = Math.sqrt(1 - light.position.y*light.position.y);
+	light.position.x = length * Math.cos( effectController.azimuth * Math.PI/180.0 );
+	light.position.z = length * Math.sin( effectController.azimuth * Math.PI/180.0 );
+	scene.add( light );
+	renderer.render(scene, camera);
+}
+
+```
+
+### 4.Quiz: Ligtht Characteristics
+
+* ambient
+* directional
+* point (positional)
+* spot
