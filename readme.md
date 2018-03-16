@@ -2011,4 +2011,3 @@ function render() {
 ### Orthographic Projection
 
 * like a 2d cad. a 3d projection in 2d. like cad views. its not like we usually percieve the world, it can create optical illusions.
-
