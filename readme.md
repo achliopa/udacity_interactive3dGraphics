@@ -1991,7 +1991,7 @@ function render() {
 
 ```
 
-### 4.Quiz: Ligtht Characteristics
+### 4.Quiz: Light Characteristics
 
 * ambient: color
 * directional: color,intensity,direction
@@ -2011,3 +2011,169 @@ function render() {
 ### Orthographic Projection
 
 * like a 2d cad. a 3d projection in 2d. like cad views. its not like we usually percieve the world, it can create optical illusions.
+
+### 3JS Orthographic Camera
+
+* to define an orthographic camera in 3js we do two operations. 1) define a volume in space 2) move and orient that volume as we like.
+
+```
+viewSize = 900;
+aspectRatio = canvasWidth/canvasHeight;
+/// 1st step define the box volume(-x,x,y,-y,-z,z)
+// Orthographic camera(left,right,top,bottom,near,far)
+camera = new THREE.OrthographicCamera(
+	-aspectRatio*viewSize/2, aspectRatio*viewSize/2, viewSize/2, -viewSize/2, -1000, 1000		
+);
+```
+
+* the camera is thought to be on the +z end of the box and sized on x by y to form a viewport looking down the -x axis (on the example) and upting the +p direction
+* dont set canvas height and width as viewport size. set it on the scene world coordinates to avoid distortion
+
+* if we view our drining bird with the camera set with the above code we will see a sideview.
+* if we want a more interesting view (projection) we need to position and orient the camera differently. thi is done with the code below
+
+```
+// 2nd step
+camera.position.set(-890,600,-480);
+cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement); 
+cameraControls.target.set(0,310,0);
+```
+
+* first line is a translation. moves the view box by an amount.
+* the camera control code does 2 things. it sets what kind of mouse controller we want for the camera. a custom orbit and pan class extends the orbit controls class of 3JS.
+* this control keeps camera oriented so that +y is always up. 
+* for more free but more difficult control the trackball control class could be used
+* last line sets the target of the camera (where we look)
+* in summary we set a view box a view direction and a viewer movement, z-buffer applies
+
+### LookAt
+
+* we look in depth at how this view box  is defined and positioned. 1sat we define our camera object as looking at worlds -z and orientedso that the top of the camera faces the +y axis. 
+the camera starts at the origin(0,0,0) like all objects.
+* then we move the cametra to the position where we want to view our scene from(translate). we also tilt and orient the camera as desired(rotation). we ignore scale (zoom?!?).
+* positioning the camera is simple. to compute the rotation needed to orient the camera, we use the lookat system. we define a target loCATION WHERE WE WANT THE CAMERA TO LOOK AT. this defines the -z axis of the cameras frame of reference (as if camera carries its coordinate system with it). 
+* the camera up vetor is Up:(0,1,0). we have look at we have Up so Xc is -Zc x Up (cross product).
+* zc and xc are global vectors. Up is a camera frame of reference vector. Yc global vector is Xc x -Zc cross product (cross product uses right hand rule to give a vector that is perpendicular to both vectors)
+
+### Quiz:LookAt
+
+* there is a 3JS lookat method on the camera itself. but usualy we use cameracontrols.target to move the camera around with the mouse. our position is (-2800,360,-1600) `cameraControls.target.set(-2800, 360, -1600);`
+
+### View Transform
+
+* we ve seen how to position and orient a camera in world space. if we apply the C matrix to a camera w palce it in the world. but we want the oposite. to position the world in respect toi the camra. if we invert the C matrix we do exactly that. this is the View MaTRIX
+* C: put camera in the world, V=C^-1 - View Matrix, VMObject M:modeling matrix, V:viewmatrix. put the object in cameras frame of reference.
+* in ebgl or opengl these two matrices are put together as mocel-view matrix
+
+### Normalized Device Coordinates.
+
+*  with the view transform ready we have all coordinates in the cameras frame of reference. what is left is define the view box space to contain everything we want to render. (set the stage)
+* the orthigraphic camera's definition is to give a left,right,top, bottom,near,far set of values to define this box. these vals set the corners of the rectangular box in the view space of the camera.
+* we first orient the world to the cameras view of things and then define the box with respect to the camera. usually left = -right, bottom = -top, near = 0. 
+* creeating the orthigraphic camera creates the projection matrix. P(VM)Object. the box defined by the projection matrix is  in front of the camera, symmetric around view axis. this box is view volume and does a projection. we say take everything in the box and project it along the +z plane of the box to form an image. we look to the -z axis as our system is right handed coordinate system for the camera. y is up x is right (cartesian system)
+* 3Js thinks of the orthographic camera as going in apositive direction, the far value is distance along the -z axis. our chain of matrix adds this projection to the front. the projection matrix is added next. when applied a coordinate will get a new value in the projections frame of reference.
+* this frame uses Normalized Device Coordinates (NDC). these coordinates take values between -1 and 1 in x,y,z
+
+### Quiz: Orthographic Matrix Type
+
+* we have the 4by4 orthographic projection matrix [2/(R-L) , 0 , 0 , -(R+L)/(R-L), 0, 2/(T-B), 0, -(T+B)/(T-B), 0, 0, 2/(F-N), -(F+N)/(F-N), 0, 0, 0, 1]. It does scaling and translation
+
+### Perspective Camera
+
+* perspective camera is like real life with objects in the distance being smaller. it uses the same sort of pipeline as before. internally we define a view matrix exacly like in orthigraphic. the difference lies in the projection matrix. 
+* in the perspecgtive view of the world objects get smaller as they go further away from the viewer. if something is farther away it needs to be larger in world space dimensions to appear the same size on screen.
+* a simplistic approach are similar triangles with the tan being the same. a perspective view involves division
+* when we multiply vector by matrix is dot product (multiplies and additions). this is where the forth coordinate for our points come into play. till now this forth coordinate was always 1 and the row empty
+* we run a point through any set of modeling transforms aND the forth coordinate value of 1 is untouched. this changes with perspective projection
+
+### 3JS Perspective Camera
+
+* [demo](http://ksimek.github.io/perspective_camera_toy.html)
+*  perspective camera is set in 3JS similar to orthographic. the creation call has fewer params.
+* near and far set the view frustum. distances of near and far palne are measured from the camera point. along a central axis. near AKA hither , far AKA yon
+* fisrst arg of the perspective cam is the field of view. this is the angle between top and bottom planes of the view pyramid. in 3JS it is set in deg not rad.
+* field of view with aspect ration defines the sides of the pyramid.
+* in orthographic we defined the location of volume box sides. in perspecive vie cone we assume symetricity around the cnetral axis so we can define it with less arguments.
+
+```
+// PerspectiveCamera(fov, aspectRation, near,far)
+camera = new THREE.PerspectiveCamera(30,aspectRatio, 1, 10000);
+camera.position.set(-170,170,40);
+cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement);
+cameraControls.target.set(0,50,0);
+```
+
+* if we want to change the camera parameters at runtime we need to call `camera.updateProjectionMatrix();`
+
+### Quiz: FOV Slider
+
+* use dat.gui library to add a gui element. name: field of view, range: 1 to 179 deg, start at 40deg
+* we setup gui
+
+```
+function setupGui() {
+	effectController = {
+		fov: 40
+	};
+	var gui = new dat.GUI();
+	gui.add( effectController, "fov", 1, 179 ).name("field of view");
+}
+```
+
+* in render() we use updateProjectionMatrix to change fov
+
+```
+	camera.fov = effectController.fov;
+	camera.updateProjectionMatrix();
+```
+
+### Perspective matrix
+
+* the perspective matrix formed from the 3JS params, is `[1/(aspect*tan(fov/2)), 0, 0, 0,   0, 1/(tan(fov/2)), 0, 0,   0, 0, (near+far)/(near-far), 2*near*far/(near-far),   0,0,-1,0]`
+* the upper left 3by3 matrix are scale factors
+* there is a translation factor for z
+* the lower row has -1 in 3rd column and 0 in last.
+* near anf far value sometimes are negative as we travel the -z axis
+* we use +z for near and far as 3JS specifies thingds
+* if near plane was behind the camera things would be wierd
+* for fov: 90deg, aspect ratio: 1 (square), near 1 , far: 11. perspective amtrix =[1,0,0,0,  0,1,0,0,  0,0,-1.2, -2.2,  0,0,-1,0]
+
+### Homogeneous Coordinates
+
+* the 4 coordinates produced if we multiply projection matrix with a point are x,y,z,w . they are called homogenous and are used for projection.
+* what we do next with these values is divide them with w. this is called the perspective divide or the homogenous divide. what we keep from the divide are the first 3 coordinates x,y,z as the last will be 1 by default.
+* we plot the original 3 points in the frustum and the projected 3 in the NDC viewport as yz plane. -z axis is right to the frustum and resulting axis is +z to the right in NDC
+* devices of same size in different distance when are projected NDC the relative area of coverage in near plane stays the same.
+* the front device was half the sizer the near plane and is half the ndc size further devices appear smaller. also middle device moves further to right.
+
+### Clipping
+
+* after projection and before division by W. we do clipping. say we have 2 points, we apply perspective transformation which gives homogenous coordinates. these two points form a line segment. say one point is inside the frustum and one outside the frustum.
+* we are interested in the coordinates in the final view volume to project them in NDC sppace for rendering. 
+* clipping is done to line segments and triangle edges that poke out of frustum. an edge can be clipped by any number of faces of the frustum. 
+* for our example all points along the line are linear interpolated. the point of the funstrum faces halfway between two points. we divide this point with w to normalize it.
+* e.g a triangle parially in the fustrum leaves out 2 edges as gets cut by fulstrum faces. the 3 resulting triangles are rasterized by the GPU
+* vectors and points are stored in homogenous coordinates (0 and 1 respectively for W). only after projection during clipping and before division that W can have a !=1 value for points. if we use NDC after cliping we normalize our coordinates dividing by w
+* homogenous coordinates are importandt as they are porduced by vertex shader. after projection and before division coordinates are called CLIP Coordinates.
+* vertex shader can produce intermediate results lice location after model-view matrices are applied.
+* vertex shader must produce a position on screen fro a vertex. this position is a homogenous ccordinate. the rasterizer tajes this position and performs clipping.
+
+### Field of View
+
+* for perspective camera control the most important parameter is FoV. it acts like a zoom lens. as we decrease the angle whatever is in middle of screen grows larger
+* as w move far way trying to make fov reach 0 deg the view becomes orthographic projection. infinetly far away everything we view is practically at same distance. this is a technique zoom in while moving away
+(dolly and zoom) focus point stays the same while anything aelse scales.
+* [vertigo effect](http://tvtropes.org/pmwiki/pmwiki.php/Main/VertigoEffect)
+
+### True Field of View
+
+* with the previous technique the view of bird is quite distorted. the problem is we dont sit close enought to the screen.
+* when we look to a monitor we are a cetain distance away from it. the screen has certain height (near plane). this forms a real FoV angle.
+the screen is our viewport to the digital world if the scene FoV is the same as the real we dont see any distortion. the height =  2 x tan(fov/2) x distance. in games the distort the fov to give broader angel sacrificing in distrotion
+
+### Target
+
+* There are many ways to move a camera to a scene. we can walk or fly, look in one dir while moving to the other.
+* we consider the camera to be either viwer scentric or model centric. in viewer centric camera moves thrugh the world.in model centric camera moves around the model. 
+* target is where we look at  the focal point. target is not needed the we make the matrices for viewing the scene. target expresses user intent.
+*many camera control systems support the idea of the target. we use the taret parameter to set it. target sets the view matrix. it keeps the camera pointed at target location as we orbit.
