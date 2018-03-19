@@ -25,15 +25,19 @@ function fillScene() {
 
 	// GROUND
 	// Student: texture is located at URL /media/img/cs291/textures/grass512x512.jpg
+
+	var texture = THREE.ImageUtils.loadTexture('/media/img/cs291/textures/grass512x512.jpg');
+	texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+	texture.repeat.set(10,10);
+	texture.offset.set(0,0);
 	var solidGround = new THREE.Mesh(
 		new THREE.PlaneGeometry( 10000, 10000, 100, 100 ),
-		new THREE.MeshLambertMaterial( { color: 0xFFFFFF } ) );
+		new THREE.MeshLambertMaterial( { map: texture } ) );
 	solidGround.rotation.x = - Math.PI / 2;
-
 	scene.add( solidGround );
 
 	// uncomment to see grid on ground
-	/*
+	
 	// put grid lines every 10000/100 = 100 units
 	var ground = new THREE.Mesh(
 		new THREE.PlaneGeometry( 10000, 10000, 100, 100 ),
@@ -42,7 +46,7 @@ function fillScene() {
 	// cheat: offset by a small amount so grid is on top
 	ground.position.y = 0.2;
 	scene.add( ground );
-	*/
+	
 
 	// Bird
 	var bird = new THREE.Object3D();

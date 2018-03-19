@@ -605,7 +605,7 @@ normalizing is rescaling a vetor to have a length of 1. a dot product of 2 norma
 ### THe dot product
 
 * given two normalized vetors,the cosine of the angle between them  is computed by the dot product.
-* given two vectors A and B the do product equals = Ax*Bx+Ay*By+Az*Bz
+* given two vectors A and B the do product equals = Ax * Bx+Ay * By+Az * Bz
 
 
 ### The dot product in detail
@@ -652,9 +652,11 @@ function createBall() {
 
 ### Ka, Kd and HSL
 
-* Fragment Color = Ka*Material /* Ambient */ + Kd*Material(NdotL) /* Diffuse */ 
+* Fragment Color = Ka * Material "Ambient" + Kd * Material(NdotL) "Diffuse "
 * Ka is the grayscale level of ambinet light , Kd modify diffuse contribution
-* HSL is a different color model Hue, Saturation, Lightness. hue is the color , saturation is how much color is used, lightnes is the light scale factor ``var color = new Color(); color.setHSL(0.122, 0.433, 0.554);`
+* HSL is a different color model Hue, Saturation, Lightness. hue is the color , saturation is how much color is used, lightnes is the light scale factor 
+
+`var color = new Color(); color.setHSL(0.122, 0.433, 0.554);`
 
 ### Quiz: baking
 
@@ -2176,4 +2178,630 @@ the screen is our viewport to the digital world if the scene FoV is the same as 
 * There are many ways to move a camera to a scene. we can walk or fly, look in one dir while moving to the other.
 * we consider the camera to be either viwer scentric or model centric. in viewer centric camera moves thrugh the world.in model centric camera moves around the model. 
 * target is where we look at  the focal point. target is not needed the we make the matrices for viewing the scene. target expresses user intent.
-*many camera control systems support the idea of the target. we use the taret parameter to set it. target sets the view matrix. it keeps the camera pointed at target location as we orbit.
+* many camera control systems support the idea of the target. we use the taret parameter to set it. target sets the view matrix. it keeps the camera pointed at target location as we orbit.
+
+### Dolly,Pan,Orbit
+
+* camera moves definition (viewer and object):
+	* adjusting field of view (FoV): zooming
+	* moving directly towards or away from object we are looking at (along central axis or target vector): dollying
+* dollying and zommig are different on the camera FoV and location. a giveaway of dollying is if new objects appear or disapear. zooming changes size of image scene.
+* in 3JS mouse wheel is for dollying or middle button
+	* panning: moving left or right with camera pointed forward (3JS right button pressed and moving mouse)
+	* orbiting: means moving around target position (circle strafing) (left mouse button)
+
+### Quiz: Camera Changes
+
+* Orbit to right (position)
+* turn camera to left (target)
+* zoom ()
+* pan to right (target,position)
+
+### Near and Far Clipping
+
+* [article](http://outerra.blogspot.gr/2012/11/maximizing-depth-buffer-range-and.html)
+* [wiki](https://en.wikibooks.org/wiki/OpenGL_Programming/Stencil_buffer)
+* Moving near and far clipping planes in the seen creates a bug to render as it is not natural. 
+* ray tracing does not have this problem (shooting rays from the eye).near and far values are necessary for rasterization as they are used in projection matrix. at bare minimum we need the near plane. a frustum with an infinitely far plane is possible
+* our target for near and far plane is to set them as close to the object as possible without causing any clipping. also near plane is good to be as far as possible from the camera.
+* near and far vals have direct effect on z-buffer calculation.
+* in GPU z-buffer is an integer (normal 24bits, if 8bits=> stencil buffer)
+* stencil buffer is used for on screen clipping and other effects
+* z-buffer has limited num of bits. this causes z-fighting if two surfaces are close enough
+* z-depth range of vals is spread exponentialy between near and far planes. if they are close we get more precision. to facilitate perspective transform we want near plane as far as possible.
+* say our near plane is at 1 anf far at 10. NDC z-depth is a hyperbolic curve, not linear, so less presicion far from camera. hence more z-fighting
+* the reason for hyperbolic cyurve is interpolation. to keep straingt lines straight after perspective interpolation (far away lines get closer and closer)
+* w val in homogenous ccordinates is linearly interpolated though, but when used in division gives the hyperbolic curve. 
+* by moving the near plane further we make the curve more linear so avoid z-fighting
+
+### Depth of Field
+
+* depth of field is the idea of simulating a real camera, focusing the lence at a particular distance.
+* [demo](https://threejs.org/examples/#webgl_postprocessing_dof)
+* [demo2](http://alteredqualia.com/three/examples/webgl_postprocessing_ssao.html)
+* in DoF algorithms the focal distance is controlled and also how blurred objects will appear when not in focus. these algos are post process. data is collected while rendering the scene. then image processing is applied and produces final depth of field.
+* the diff part is getting objects in foregrund to be blurry and blend with  objects in focus behind them. 
+
+### Window Coordinates
+
+* [multi canvas](https://threejs.org/examples/#webgl_multiple_canvases_complex)
+* [mutli viewports](http://stemkoski.github.io/Three.js/#Viewports-Dual)
+* [view pipeline](http://www.glprogramming.com/red/chapter03.html)
+* [projection](http://www.songho.ca/opengl/gl_transform.html#projection)
+* up to now we have seen the view pipeline as a set of matrixes applied on the object: P(VM)Object with projection matrix transorm from the camera.
+* after perspective transformation perspective divide happens (w divide) to get from clip coordinates to NDC (normalize device coordinates)
+* the last transformation in the pipeline is a simple one. we get from NDC coordinates to Window coordinates
+* in other words how we move from a space of -1,1 in x,y,z to an image with the depth buffer.
+* answer: Xw = ((X+1)/2) * Xres, Yw = ((Y+1)/2) * Yres, Zw = ((Z+1)/2) * Zres
+* this changes from -1, 1 to 0,1
+* in 3JS when we select apart of the screen as viewport , we set the low left coner ans set width and height
+
+```
+var canvasWidth = windwo.innerWidth;
+var canvasHeight = windwo.innerHeight;
+// small, middle of bootom of screen
+renderer.setViewport(
+	0.25 * canvasWidth, 0, 0.5 * canvasWidth, 0.5 * canvasHeight );
+```
+* we can have multiple viewports on screen each rendering adifferent perspective of the object (good for modeling)
+* in DOM top left is 0.0. 
+* center of pixel is 0.5,0.5 
+
+### Antialiasing
+
+* when we rasterize a scene. we find whats at the center of each pixel. so at edges are considered to fully cover a pixel or not. this causes aliasing or 'jagging' or 'starstepping' or 'crawlies'
+* we can fix it with blurring but its not feasible
+* there are many schemes antialiasing. supersampling, make higer resolution use extra samples to make image. like 4* in each dimension each pixel has 16 (4 by 4) for blending.
+* GPU supports mutltisampling anti-alias. MSAA.idea is to compute a shade for whole fragment once and compute geometric coverage separately. sampling differs by GPU manufacturer. used by default in WebGl
+* [FXAA demo](https://threejs.org/examples/#webgl_shading_physical),[methods](http://iryoku.com/aacourse/)
+* [SMAA(http://www.iryoku.com/smaa/)
+* [nviddia bug](https://bugs.chromium.org/p/chromium/issues/detail?id=159275)
+* turn antialiasing on/off in 3JS `renderer = new THREE.WebGLRenderer({antialias: true});` sometimes gives bugs depends on GPU
+* filetring on image antialiasing: MLAA morphological aantialiasing, detect sharp edges. smooth them with nearby pixels. FXAA just uses the image and is good and is included in 3JS
+
+## Lesson 16 - Problem Set
+
+### 1.Quiz: Near Plane to Zero
+
+* what happens if i put near plane to zero: ncd z values are all 1 so z-buffer gets screwed
+
+### 2.Quiz: Graphic Pipeline Coordinatres
+
+* Model Coordinates -> World Coordinates -> View Coordinates -> Clip Coordinates -> NDC -> Window Coordinates
+
+### 3. Quiz: 4 viewports
+
+* in this exercise author sets 2 viewports on screen (perspective view and top view orthographic camnera)
+* when using multi viewports set autoclear false (see code)
+* top view works by defining volume and space. up vector for view is +x axis
+* during rendering the capera position is set up 1 unit. looking down at the target (look at target and move back  to establish look at direction)
+* look at direction and up direction should never be parallel
+* we need to add 2 more viewports (front: look up along +x) and (side viewport: down along the -z axis)
+* sample code
+
+```
+// dont clear when multiple viewports are drawn
+renderer.autoClear = false;
+//OrthographicCamera(left,right,top, bottom, near, far);
+topCam = new THREE.OrthographicCamera(
+	-aspectRatio*viewSize /2, aspectRatio*viewSize/2, viewSize/2,-viewSize/2, -1000, 1000
+	);
+// set X to be up axis
+topCam.up.set(1,0,0);
+//add in render()
+
+//top view
+topCam.position.copy(cameraControls.target);
+//move up a unit and look down at target
+topCam.position.y +=1;
+topCam.lookAt(cameraControls.)
+```
+
+* solution
+
+* in init()
+
+```
+frontCam = new THREE.OrthographicCamera(
+		-aspectRatio*viewSize / 2, aspectRatio*viewSize / 2,
+		viewSize / 2, -viewSize / 2,
+		-1000, 1000 );
+	frontCam.up.set( 0, 1, 0 );
+
+	sideCam = new THREE.OrthographicCamera(
+		-aspectRatio*viewSize / 2, aspectRatio*viewSize / 2,
+		viewSize / 2, -viewSize / 2,
+		-1000, 1000 );
+	sideCam.up.set( 0, 1, 0 );
+```
+
+* in render
+```
+// front view
+	frontCam.position.copy( cameraControls.target );
+	// move up a unit and look down at bird
+	frontCam.position.x -=1 ;
+	frontCam.lookAt( cameraControls.target );
+
+	renderer.setViewport( 0, 0.5*canvasHeight, 0.5*canvasWidth, 0.5*canvasHeight);
+	renderer.render( scene, frontCam );
+
+	// side view
+	sideCam.position.copy( cameraControls.target );
+	// move up a unit and look down at bird
+	sideCam.position.z +=1 ;
+	sideCam.lookAt( cameraControls.target );
+
+	renderer.setViewport( 0.5*canvasWidth, 0, 0.5*canvasWidth, 0.5*canvasHeight );
+	renderer.render( scene, sideCam );
+```
+
+### 4.Quiz:Rear View Camera
+
+* rear view position, same as forward camera (with exactly opposite direction). its not exactly a mirror as left right are not reversed. sane position opposite using lookAt and Vector3 methods
+* solution
+
+```
+	rearCam.position.copy(camera.position);
+	rearTarget.copy( camera.position );
+	rearTarget.sub( cameraControls.target );
+	rearTarget.add( camera.position );
+	rearCam.lookAt( rearTarget );
+```
+
+* teacher does a smart thing we sets the vector between camera position and target, reverses it. and sets it as lookAt. SMARTTT
+
+### 5.Quiz: Divizion by Zero
+
+points (x,y,0,1) give W = 0 and we get division by 0. these points are on a plane parallel to the near plane that goes through the origin
+
+### 6.Quiz: Camera Matrices Matching
+
+## Lesson 17 - Textures and Reflections
+
+### Intro
+
+* texture is an image or pattern applied on a surface. reflections of environment images is easy on the GPU
+
+### How Texturing Works
+
+* at its simplest form: we take a location on a surface. given that location use some function to change the surface attributes at that location.(e.g color, shininess, transparency,normal, height or shape)
+* we have a cube and we wnat to make it look like a crate. the simplest way is to take an image and gue it on the surfaces. in 3js this is done like:
+
+```
+var crateTxr = THREE.ImageUtils.loadTexture('textures/crate.gif');
+var material = new THREE.MeshBasicMaterial({ map: createTxr});
+```
+
+* first line creates the texture, second line apllies it to a material
+* for security reasons textures must come from the same server to run (no CDN)
+
+### Texture UVs
+
+* [democode](http://stemkoski.github.io/Three.js/#Textures)
+* given a box and image texture how do the 2 get attached. 
+* given a location on box surface how do we find the corresponding location on texture image.
+* say we use the location in the world as our input. this has problems as the box might get transformed. tese would change the world position on its surface making it dificult to get to the same pixel location o n the image from frame to frame. this problem is solved by adding 2 variables in each vertex. U and V coordinates.
+* as with any vertex attribute . these values are interpolated across each triangle during rasterization. 
+* every pixel fragment generated from the surface will have these two values available.
+* in the fragment shader these 2 values are used to look up the corresponding pixel location on ther texture.
+* a pixel on the texture is called TEXEL. 
+* U is like X axis and V is like y . the range is 0 to 1.
+. e.g on the face of the box we want to find a texel color to use for the pixel with UV coordinates 0.2,0.7
+* using these 2 values we look for the texel in the texture image and use it to color the surface.
+
+### UVs in 3JS.
+
+* [demo](https://threejs.org/examples/#webgl_geometries)
+* many 3jS geomnetry objects come with their own UVs built in. some of these are in the demo. 
+* for planar objects the textur is put flat against the face.
+* for round objects the u value goes from 0 toi 1 accross the equator and the V from 0 to 1 along the axis
+* cone looks funny and tetrahedron looks distorted as no UV mapping is given and 3JS creates using a ruler.
+* sometimes there is no UV mapping for the object and its up to the programmer to proceed.
+* with standard objects the UV is defined by the geometry class used to make the triangles.
+* the form of making triangles with UVs is the follwoing.
+
+```
+var geo = new THREE.Geometry();
+
+// generate vertices
+geo.vertices.push(new THREE.Vector3(0.0, 0.0 0.0));
+geo.vertices.push(new THREE.Vector3(4.0, 0.0 0.0));
+geo.vertices.push(new THREE.Vector3(4.0, 4.0 0.0));
+
+var uvs = [];
+uvs.push(new THREE.Vector2(0.0 0.0));
+uvs.push(new THREE.Vector2(1.0 0.0));
+uvs.push(new THREE.Vector2(0.0 1.0));
+
+//generate faces
+geo.faces.push(new THREE.Face3(0,1,2));
+geo.faceVertexUvs[0].push([uvs[0], uvs[1], uvs[2]]);
+```
+
+* the way uvs are attached to the VerexUV is non-standard. if we want to add Uvs to face vertexes we use same method
+
+```
+geo.faces.push(new THREE.Face3(8,2,6));
+geo.faceVertexUvs[0].push([uvs[8], uvs[2], uvs[6]]);
+```
+
+### Quiz.Make a Textured Square
+
+* THREE.ImageUtils.loadTexture has been deprecated. use THREE.TextureLoader().load instead
+* we add a vertex and a face. 
+
+### Texture Mapping
+
+* [demo](https://threejs.org/examples/#webgl_loader_md2_control)
+* objects with UVs and textures can be imported in 3JS.
+* UVs of an object affect how the texture is mapped to the surface. 
+* by changing the UVs we select different part of the texture. 
+* the way a model is associated with its texture is called texture mapping.
+* the spheres and other objects we saw before had fairly natural projections of the texture on their surface.
+* for complex models the artists use modeling programs to assign parts of the texture on the model. a single texture is used to store all images for the mesh. this kind of texture is called texture map or mosaic.
+
+### Quiz: Texel Coordinates
+
+* to convert from UV values to texels. if the texture is of size 16by16 then lower left corner has location (0,0) and upper left corner (15,15). the UV coordinates of lower left corner is (0.0,0.0) and upper right (1.0,1.0) we use linear interplation to find intermediate texl coordinates. from UV values. we multiply floats by texture max size per axis e.g16 and drop the fraction.
+
+### Modifying UV Coordinates
+
+* if we increase the u,v values further than 1 texture repeats itself. if we decreas eless than 1 a fraction of texture is mapped on the surface
+* if we increase x, y the surface increaces
+
+### Texture Distortion
+
+* so far we have seen rectangular surfaces and textures. the modifications were still resulting in rectangles.
+* in this demo we modify the position of uper right and upper left u and v  coordinates and also surface upper right and upper left x and y creating distortions.
+
+### Quiz:What causes Texture Discontinuities
+
+* [article1](http://geekshavefeelings.com/x/wp-content[/uploads/2010/03/Its-Really-Not-a-Rendering-Bug-You-see....pdf) [article2](http://www.realtimerendering.com/blog/limits-of-triangles/)
+* the discontinuity is caused becase the rectangle is made of 2 triangles. and the texture is apllied so moving a corner does not affect theo ther triangle.
+cd wo	
+###  Wrap Modes
+
+* [webgl textures](https://www.khronos.org/webgl/wiki/WebGL_and_OpenGL_Differences) 
+* there are 3 main ways in 3JS to repeat a texture. Repeat, Mirrored Repeat, Clamp to Edge. they are called Wrap Modes.
+* repeat mode is the most used. it repeats the texture one after the other 
+* if a texture is not seamless a cheap way to tile it accross the palne is to set the wrap mode to mirror repeaat. mirror repeat flips texture on each repetition
+* clampto edge. pixels on the edge are used to fill the area where texture does not appear. this is the default wrapping mode as it offers filtering along the edges if texture is not repeated.
+* we use the 3 modes in 3JS like this:
+
+```
+var texture =  new THREE.Texture();
+texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+texture.wrapS = texture.wrapT = THREE.MirroredRepeatWrapping;
+texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+```
+
+* s and t mean U and V axes. we can mixe these mode using one mode in one axis and another on the other.
+
+### Texture Transform
+
+* [color tiling](http://procworld.blogspot.gr/search/label/Wang%20Tiles)
+* [minecraft texture madness](https://www.youtube.com/watch?v=1tm8K3n_Tps)
+* one way to change how many times a texture repeat is to modify the uV coordinates of the square. so we have to modify the geometric mesh itself
+* 3JS has an alternate solution. it allows setting two params om texture: repeat and offset.
+
+```
+var texture = new THREE.Texture();
+texture.repeat.set(1,1);
+texture.offset.set(0,0);
+```
+
+* these params se a transform onthe texture. repeat is scaling operation. how many times the texture will repeat along the surface on the spedifies axis.
+* offset is a translation adding to the uv coordinate after scaling. it shifts the texture. by changing it we can animate the texture.
+
+### Texture Magnification
+
+* we have a simple texture a checkerboard of 4 textels (2by2). if we put this texture on a square multipixel surface multiple pixels share the same texel. we want the suerface to look as acheckerboard but if we transorfm it, we see aliasing. 
+* one way to map the texture on the surface is 'nearest neighbour' we choose to show on the pixel the texel whose center in closest to the pixel.
+* another way is 'bilinear interpolation' or linear. it takes the 4 surrounding texel centers and interpolates among them. the closer the pixel is to the texel center the more of this color you get. the resulting image is blurred across the whole texture not along the borders. the problem in our example is that one texel covers many pixels. if we reduce the number of pixels per texel the result is better
+* in 3JS
+
+```
+var texture = new THREE>Texture();
+texture.magFilter = THREE.NearestFilter; // one tap
+texture.magFilter = THREE.LinearFilter; // four taps
+```
+
+* linearFitler uses more texture samples per pixel and gets better results. also avoid textures when a texel covers a lot of pixels.
+* when a texel covers more than 1 pixel (texels/pixels <1) it is called magnification. we magnify the texture
+* when magnification occurs the textures mag filter is used.
+* if a pixel contains >1 texel (texels/pixels >1) is called minification
+
+### Smooth to Sharp
+
+* in linear filter putting more pixels per texel makes line smooth. we zoom its is sharp and then smooth again. the pixel texel ration changes, mangification is not apllied, minification does. linear fitler is not applied.
+
+### Minification
+
+* in general we like the ration between texels and pixels to be around 1:1
+* if texels vcover many pixels we get blurring. this happens when we use small textures.
+* if a pixel covers many texels we get minification. for high-res textures it causes sharp edges. the problem is worse in normal conditions. changineg resoltution does not help. puting minification filter to linear helps but not solvews the issue. reducing the texls in textures improves but adds blur. in 1 by1 becomes gray.
+
+### Mipmapping
+
+* [demo](https://threejs.org/examples/#webgl_materials_texture_manualmipmap)
+* in magnification one way to solve the issues is to make texture larger so that one texel covers one pixel. the same for minificaion.
+* GPU does this with an algorithm called mipmaping.
+* Mipmapping calculates texel/pixel ration if <1 magfilter takes effexct (higer resultion of texture used, if >1 minification filter takes effect (lower resolution of texture gets used).
+* To improve quality we can set GPU to linear interpolate between levels. this si called trilinear filtering.
+* the mipmap chain is formed in scale of 2 (GPU can average 4 pixels to form 1 to scale, taking into account gama corrention)
+* tO USE MIPMAPING OUR TEXTURES must be power of 2 in both directions
+* our demo uses mipmaping in minification filter.
+* mip = multum in parvo (much in small space)
+
+### Anisotropy
+
+* mipmaping is an improvement but looks grey on the horizon. modern GPUs offer better solution. its called Anisotropic Sampling.
+* Anisotropic means having a different val in different directions, Sampling means retrieving a textures color for a frag (eg fragment shader will use texture mipamp pyr to set textures color at a pixel).
+* Anisotropic is much relevant far where apixel may cover many texels vertically but feew horizontically. (so takes more samples vetrticaly)
+* [demo](https://threejs.org/examples/#webgl_materials_texture_anisotropy)
+
+### Sampling and Filtering
+
+* 3JS code sample setting texture filters
+
+```
+var texture = new THREE.Texture();
+texture.magFilter = THREE.NearestFilter;
+texture.magFilter = THREE.LinearFilter; //default
+
+texture.minFilter = THREE.NearestFilter;
+texture.minFilter = THREE.LinearFilter;
+texture.minFilter = THREE.LinearMipMapLinearFilter; //default
+
+texture.anisotropy = 1;
+texture.anisotropy = renderer.getMaxAnisotropy();
+```
+
+### Tranparency Mapping
+
+* using textures with alpha channel makes them transparent.
+* transparent objects in 3js must be given transparent material. this ensures: rendering after all opaque objects. blending is enabled ao all transparent pixels will blend with objects behind.
+* by turning blending on rgb vals are properly blended using their alpha values.
+* photo processing programscan create alpha channels for images. the correct file format is PNG as its has alpha channel
+
+### The meaning of alpha
+
+* to use transparency on materials we use the color's alpha val to specify objects opacity. we can think alpha as the % of coverage by the color. if we specify alpha channel on the edge texels in a texture we get smooth transitions/ the val is the % of the texel covered by the texture in that texel. so alpha represents opacity and coverage. opacity and coverage get multiplied to give the final alpha on the texel.
+* alpha for coverage is an estimation. we dont know the actual shape just the area %
+
+### Premultiplied Alpha
+
+* png files dont use premultiplied alpha. text data can be stored bith ways. unmultiplied or multiplied.
+* the blendig operation used for transparency is: c = AsCs + (1-As)Cd (over operator) (s = source object the blended object) (d = destination object object behind the blended object) C is the color A ois the alpha.
+* Cp = AsCs (premultiplied) then C = Cp + (1-As)Cd
+
+### Quiz:Valid Unmultiplying
+
+* UNMUTLIPLIED: (0.3, 0.7, 1.0, 0.5) RGBA
+* PREMUTLIPLIED: (0.15, 0.35, 0.5, 0.5)
+* we can convert back and forth between two modes. 
+* unmutliplied to multiplied is always valid, the opposite is not always possible. (remember range is 0to1)
+
+### Particles and Billboards
+
+* [squares](https://threejs.org/examples/#webgl_points_random) [kinect](https://threejs.org/examples/#webgl_kinect) [code](http://stemkoski.github.io/Three.js/#Sprites)
+* [potree demo](http://potree.org/) [spheres](https://threejs.org/examples/#webgl_points_billboards_colors)
+* [lens flare](https://en.wikipedia.org/wiki/Lens_flare) [webgl](http://john-chapman-graphics.blogspot.gr/2013/02/pseudo-lens-flare.html)
+* [snow](https://threejs.org/examples/#webgl_points_sprites) [clouds](http://mrdoob.com/lab/javascript/webgl/clouds/) [lens flare](https://threejs.org/examples/#webgl_lensflares)
+* a cool thing with shapes with transparency  is create many of them (eg squares) and move them around. when many of objects like these move around we call them particles.
+* we can display them as if they are 2d objects flat on screen. 3d objects like spere are more convincing.
+* when we move the camera they move to face the camera.
+* we add texture to them with alpha channel to get depth. particles can represent 3d scan to data.
+* this teqnique is billboarding. it makes 2d data look like 3d
+* lens flare is also an effect that we can do. its very much used in games
+* researchers are trying to render images with particles instead of triangles. an advantage is that 3d can be captured and directly viewed. no processing needed to reconstruct triangles or meshes
+* in potree demo as we zoom more particles flow and fill the gaps. potree 3d capture is with laser scan
+
+### Making Particles
+
+* in 3JS we can create a set of particles using the built in particle system object.
+* thecode bleow shows a way to make particles.
+
+```
+var disk = THREE.ImageUtils.loadTexture('texture/disc.png');
+var material = THREE.ParticleBasisMaterial({size: 35, sizeAttenuation: false, map: disk, transparent: true});
+material.color.setHSL(0.9,0.2,0.6);
+var particles = new THREE.ParticleSystem(geometry,material);
+particles.sortParticles = true;
+scene.add(particles);
+```
+
+* we load a dic texture transparent around the edges.
+* we use this texture in ParticleBasicMaterial which creates a bilboard type of object that points to camera. we want the texture always facing us. disabling size attenuation we direct that each particle will have same size. size 35 says that particle will be 35pixels wide.
+* next we make the particle system. seeting sortParticles true we sotrt tthe particles towards the camera. otherwise blending will not work ok. they need to be drawn back to forth
+
+```
+var geometry = new THREE.Geometry();
+for (var i=0; i <8000; i++) {
+	var vertex = new THREE.Vector3();
+	// accept the point only if it is in the sphere (2000 radius)
+	do {
+		vertex.x = 2000 * Mathe.random() -1000;
+		vertex.y = 2000 * Mathe.random() -1000;
+		vertex.z = 2000 * Mathe.random() -1000;
+	} while (vertex.length() > 1000);
+	geometry.vertices.push
+}
+```
+
+* the geometry object we pass into paricle system is a list of vertices. in the abovve example 8000 particles are added to the scene. we generate them in abox of 1000 size and keep only the once that are in the sphere.
+
+### Quiz: Particle Grid
+
+* instead of 8000 random generated particles we want 9261 particles in a structured grid
+* we rewrite the code to put a particle in every point in a 2000*2000*2000 grid around the origin. spaced 100 units apart. so 21 points per axis in total 21 * 21 * 21 = 9261 points
+
+```
+	for (var i = -1000 ; i< 1000; i+=100){
+		for (var j = -1000 ; j < 1000; j+=100){
+			for (var k = -1000 ; k < 1000; k+=100){
+				var vertex = new THREE.Vector3();
+				vertex.x = i;
+				vertex.y = j;
+				vertex.z = k;
+
+				geometry.vertices.push( vertex );
+			}
+		}
+	}
+```
+
+### Displacement and Normal Mapping
+
+* [water](http://madebyevan.com/webgl-water/)[head](https://threejs.org/examples/#webgl_materials_normalmap)
+* [leson script](https://www.udacity.com/wiki/cs291#!#course-notes)
+* [caustics](https://medium.com/@evanwallace/rendering-realtime-caustics-in-webgl-2a99a29a0b2c)
+* [headnin](https://threejs.org/examples/webgl_materials_displacementmap.html)
+* [geo](https://github.com/meetar/three.js-displacement-map)
+* in displacement mapping, a texture called height field is used to change the height of the surface itself in each vertex. so each vertex has an u v value. this value is used to retrieve the height value of the texture. the height value is used to displace the vertex.(aka move it upward or donward along its normal)
+* but simpy displacing the vbertices does not change the shading normals of the surrounding surface. to change the shading normals another texture is added to the surface. this is called the normal map and is different from what we have seen so far. so we have displacement map and normal map as textures applied. in the displacement map the grey level shows the amount of displacement. the normal map derives from the displacement map. there are tools to create them. 
+* each normal in a normal map is found from the differences in the nearby heights in the displacement map. we can tell a normal map from its distinctive light blue.
+* the normal map stores the xyz vector in each texel. when we view this xyz vector as rgb color we get this look. red channel is  (+x to right), green channel is y (+y upp) blue channel is z.
+* the xyz space is relative to the surface of the model and is called tangent space.
+* if the normal is not to be changed it is stored as 0,0,1 on the zz axis. 127 in this texture is 0.0 a val of 255 is 1.0 so unchanged normal is as RGB val F0F0FF. the normal of the normal map takes the place of the shading normal. we can apply normal mapping only or in combination with displacement mapping.
+
+### Quiz:Where Does Displacement Happen.
+
+* in the vertex shader
+
+### Light Mapping
+
+* [demo](https://threejs.org/examples/#webgl_materials_lightmap)
+* [demo](http://192.168.71.6:15871/cgi-bin/blockpage.cgi?ws-session=2701441238)
+* light mapping is a way of lighting objects to l;ook highly realistic or highly stylized. fore static objects the idea is to precompute shadows, reflected light or any effects desired.
+* like mutlit shadow effect from object to object is hard to do at realtime.
+* how it works: every surface is assigned an additional texture called light map. this extra texture is used to capture lighjt effects. an offline process is done to the illumination of the scene. given the time we calculate how much light reaches each pixel on surface. results are stored in light map.
+* the light map is a s mosaic texture, holding illumination calculations of different surfaces.
+* we could bake lighting into each color texture instead of using separate light map but its expensive. lightmaps can have mush more lower res and can have 1 color chanel
+
+### Ambient Occlusion
+
+[wiki](https://en.wikipedia.org/wiki/Ambient_occlusion)[SSAO wiki](https://en.wikipedia.org/wiki/Screen_space_ambient_occlusion)[demo](http://www.4gamer.net/games/032/G003263/20121201006/)
+* a process with which light is applied to surfaces is a form of global illumination algorithm  like path tracing.
+* anothe technique is called ambient occlusion which is concered with the geometry on scene. ambient occlusion looks for edges, valleys, cervices where light is less likely to penetrate. an example is minecraft. this algorithm calculates how close avertex is to a corner or cervice. these vals are interpolated in each surface and blend in.
+* there is another class of algorithms called Screen Space ambient occlusion used in interactive rendering.
+
+### Time to Explore 
+
+* [amazing demo](http://alteredqualia.com/three/examples/webgl_city.html)
+
+### Skybox
+
+* [code](https://threejs.org/examples/#webgl_materials_cubemap_balls_refraction)[tutorial](http://stemkoski.github.io/Three.js/#Skybox)[textures](http://www.humus.name/index.php?page=Textures)[demo](http://oos.moxiecode.com/js_webgl/water_noise/)
+* insteat of applying a texture to an object we can apply a texture to represent the world itself. how it is done is with a sky box. the idea is to put the viewer in the center of a box and put the envoronment texture on the box floor ceiling and walls. we have to prevent the viewer to get close to the border limits because he will see it is an illusion. 
+* if we add a wireframe the trick is revealed. skyboxes are made by 6 images. a cube is not necessary it can be a hemisphere dome. our eyes cannot see the z buffer. he have to set the far plane oif the camera to encompass the cube to avoid clipping.
+
+### Reflection Mapping
+
+* [tutorial](http://stemkoski.github.io/Three.js/#Reflection)[demo1](https://threejs.org/examples/#webgl_materials_cars)[demo2](https://threejs.org/examples/#webgl_loader_ctm_materials)[demo3](http://jeromeetienne.github.io/tquery/plugins/car/examples/)[demo4](http://carvisualizer.plus360degrees.com/threejs/)
+* there are many ways to use textures to modify surface params in the lighting equation. another way to modify illumination is to apply light textures as light sources. we he seen how a skybox can surround a scene. a clever teqnique is to have surfaces reflect the skybox. this is called reflection mappin  or environmnet maPPING.
+* the illumination process is like ray tracing where a ray is reflected off a shiny surface and picks up color of any reflected object (eg skybox). the diff with skybox is that there is only one pbject to reflect . the cube map.
+* unlike skybox the environment map is only used when a shiny surface needs a reflected color. we can add a skybox in scene to add realistic. however environment map is a separate object that is part of the shiny objects material desc. environment map is like skybox for reflected rays.
+* this works like this. we can think of a skybox alike a physical object or as a texture function. what is the color of the skybox in the direction the eye is looking. enavironment map is the same for reflected rays. what is the color of the environment map in the reflected direction. 
+* we render a fragment in a reflective sirface e.g a sphere. we compute the usual elements like diffuse , ambient etc. for the envionemnt map we also need. the direction to the eye and the shading normal at the fragment. these two vectors are used to compute the reflection vector direction which is then used to find the texel on the environment map. thsi texel color can then be blended in the final color of the fragment. t
+* the color from the environment map makes the surface look mirror like.
+* the simplest cube map to reflect is the one tha is in infinity. liek the directional light. if we set environment map at infinity no matter how we look the object we see the same relfection
+* if we have a sphere moving to a wall the reflection of the wall will not change.
+
+### Quiz: Reflection Equation
+
+* our task is to derive the reflection equation. we are given the V vector from the mirror surface to the eye. the mirrror surface normal vector is N. these two vectors are normalized and the dot product of the normalized vectors is computed and stored in D. we are given two other vectors dV and dN which are V and N multiplied by the dot product. dV is the prohection of N on the V vector and dN is the projection of V on the N vector. we want to find the normalized Reflection Vector R (summetrical of V on the axis N)
+* R = 2dN - V = 2(VdotN)N-V
+
+### Refraction Mapping
+
+* [spheres demo](https://threejs.org/examples/webgl_materials_cubemap_balls_refraction.html) 
+* [heads](https://threejs.org/examples/webgl_materials_cubemap.html)
+* [tutorial](http://stemkoski.github.io/Three.js/#refraction)
+* as we can make a reflection vector to perform reflation mapping we can make a refraction vector and use it to access the environment map. this can be combined with object color to make a differation of material that looks like glass. 
+* we use Snells Law to calculate refraction direction n1 * sin(θi) =n2 * sin(θt) θi is the angle between the surface noral and the light direction n1 and n2 are the refraction index of air and material (water, glass) n is the speed light travels in comparison to vacuum. θt is the angle between -nand the refracted vector. light bends towards the normal in refracted materials. real objects have 2 refractive surfaces , entering and exiting
+
+### GLossy Reflection
+
+* [AMD blur tool](https://seblagarde.wordpress.com/2012/06/10/amd-cubemapgen-for-physically-based-rendering/)[free SW](https://www.autodesk.com/education/free-software/featured)
+* many reflective surfaces are glossy. shiny but not mirrorlike, reflections are blurred. a solution is to blur the environment map. environment map treats all environment as a source of light.
+
+### Diffuse Environment Mapping
+
+* [tutorial](http://codeflow.org/entries/2011/apr/18/advanced-webgl-part-3-irradiance-environment-map/)
+* we have used cibe maps for skyboxes, environment maps for sharp and glossy reflections and refraction
+* we can use the same mech for diffuse lighting. for other techniques we used direction to eye and surface normal to compute rays. frr diffuse map we just need the shading normal. we used the lambert law. dot product of light vector and surface normal. for environemnt map every texel is light we add all dot products
+* this is expensive. this exercise is good for path tracing. once we computed the sum we have it for all point with same direction. the cube map can be used to store the resutls of our computations (for all directions so preprocessing) this is called irradiance map. the diffuse map can be low resilution.
+
+### Diffuse light example.
+
+* [tutorial](http://codeflow.org/entries/2011/apr/18/advanced-webgl-part-3-irradiance-environment-map/)
+* [paper](http://www.sci.utah.edu/~bigler/images/msthesis/The%20irradiance%20volume.pdf)
+* [farcry use](http://fileadmin.cs.lth.se/cs/Education/EDAN35/lectures/L10b-Nikolay_DRTV.pdf)
+* [amazing demo](http://codeflow.org/entries/2012/aug/25/webgl-deferred-irradiance-volumes/)
+* in 3JS we can use irradiance map as paint
+* CHECK HIGLY DYNAMIC RANGE TEXTURES (HDR) used in plastics as they pick up bright lights reflections.
+
+### On the fly cube maps
+
+* [demo](https://threejs.org/examples/#webgl_materials_cubemap_dynamic2)[tutorial](http://stemkoski.github.io/Three.js/#Camera-Texture)
+* so far we computed cube maps in advance. GPU ican produce them on the fl;y. the way to do it is to make a cube map from the viewpoint of the spheres position.
+* the spheres center in each face of the cube map forms a view frustum. you render the scene siz times. each for each cube face. each rendering is used for the new cube. the sphere is not rendered on the cube map. when the cube is rendered it is applied to all objects on scene. the cube map icludes the cube and knot. the same map is used on knot and cube but theya re blured so we dont see the difference.
+* this technique is poular in racing games. car is removed 
+
+### Conclusion
+
+* [video display demo](https://threejs.org/examples/#webgl_materials_video)[tutorial](http://stemkoski.github.io/Three.js/#video-texture)[webcam](http://stemkoski.github.io/Three.js/#Webcam-Test)
+[webcamtexture](http://stemkoski.github.io/Three.js/#Webcam-Texture)[many cams](http://stemkoski.github.io/Three.js/#Many-Cameras)
+* GPUS are optimized for textures
+
+## Lesson 18 - Problem Set
+
+### 1.Quiz:Pick A Letter
+
+* we need to modify the existing code so that we display only nuber 1 from the grid. we should pick a piece 1/4 in size in both directions and scale it to show only the num
+
+```
+	// Change this array to select the correct part of the texture
+	var uvs = [];
+	uvs.push( new THREE.Vector2( 0.75, 0.25 ) );
+	uvs.push( new THREE.Vector2( 1.0, 0.25) );
+	uvs.push( new THREE.Vector2( 1.0, 0.5) );
+	uvs.push( new THREE.Vector2(0.75, 0.5 ) );
+```
+
+### 2.Quiz:Y Flipped Texture Coordinates
+
+* we will sometimes run into textures flipped top to bottom with y axis reveresed. in 3JS we can easily fix that by adding `texture.flipY = true;` however texture coordinates when flipping Y are tricky. UV stays the same but texture image texels are flipped upper left is 0,0 and lower right is size,size. UV coordinates point to outer edge of image.
+
+### 3.Quiz:Grassy Plain
+
+* our job is to add a grass texture on surface ground plane. we need to repeat texture ten times in each direction. dont forget wrap mode.
+* solution
+
+```
+	var texture = THREE.ImageUtils.loadTexture('/media/img/cs291/textures/grass512x512.jpg');
+	texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+	texture.repeat.set(10,10);
+	texture.offset.set(0,0);
+	var solidGround = new THREE.Mesh(
+		new THREE.PlaneGeometry( 10000, 10000, 100, 100 ),
+		new THREE.MeshLambertMaterial( { map: texture } ) );
+	solidGround.rotation.x = - Math.PI / 2;
+	scene.add( solidGround );
+```
+
+### 4.Quiz:Drinking Bird Tail
+
+* teacher added a surface for the tail (tail polygon). instead of adding n Object3D, he changed the order Euler angles are evaluated (WTF?). our task is just add the image to the tail.
+
+```
+	var texture = THREE.ImageUtils.loadTexture('/media/img/cs291/textures/feather.png');
+	var tail = new THREE.Mesh(
+		new THREE.PlaneGeometry( 100, 100, 1, 1 ),
+		new THREE.MeshLambertMaterial(
+			{ side: THREE.DoubleSide, map: texture, transparent: true } ) );
+```
+
+* add transparency, keep double side.
