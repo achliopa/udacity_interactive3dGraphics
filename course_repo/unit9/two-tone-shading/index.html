@@ -47,7 +47,12 @@ void main() {
 
 	// Student: check the diffuse dot product against uBorder and adjust
 	// this diffuse value accordingly.
-	float diffuse = max( dot( normal, lVector ), 0.0);
+    float diffuse = max(dot(normal,lVector),0.0);
+    if (diffuse > uBorder) {
+        diffuse = 1.0;
+    } else {
+        diffuse = 0.5;
+    }
 
 	gl_FragColor = vec4( uKd * uMaterialColor * uDirLightColor * diffuse, 1.0 );
 }
