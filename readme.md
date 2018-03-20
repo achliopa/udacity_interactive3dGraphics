@@ -2738,7 +2738,11 @@ for (var i=0; i <8000; i++) {
 
 * [tutorial](http://codeflow.org/entries/2011/apr/18/advanced-webgl-part-3-irradiance-environment-map/)
 * [paper](http://www.sci.utah.edu/~bigler/images/msthesis/The%20irradiance%20volume.pdf)
+<<<<<<< HEAD
 * [farcry use](http://fileadmin.cs.lth.se/cs/Education/EDAN35/lectures/L10b-Nikolay_DRTV.pdf)
+=======
+* [far cry use](http://fileadmin.cs.lth.se/cs/Education/EDAN35/lectures/L10b-Nikolay_DRTV.pdf)
+>>>>>>> 157ff86fc4a91617b1c16eaac6cb4fe873194983
 * [amazing demo](http://codeflow.org/entries/2012/aug/25/webgl-deferred-irradiance-volumes/)
 * in 3JS we can use irradiance map as paint
 * CHECK HIGLY DYNAMIC RANGE TEXTURES (HDR) used in plastics as they pick up bright lights reflections.
@@ -2805,3 +2809,66 @@ for (var i=0; i <8000; i++) {
 ```
 
 * add transparency, keep double side.
+
+## Lesson 19 - Shader Programming
+
+### Overview
+
+* by programminfg the lighing pipeline we can create custom materials
+
+### programmable Shaders
+
+* [OpenGL Pipeline](http://openglinsights.com/pipeline.html)
+
+* We refresh the programmable pipeline: Application => Verex Shader (Programmable) => Triangle Setup => Fragment Shader (Programmable) => Z-Buffer Test
+* IN old times Vertex and Fragment Shaders were not programmable. They were handled by the Fixed Function Pipeline. GPU transistors were dedicated to the Transform and Rasterization process. the programmer controlled the flow of data. there was no real programmability involved.
+* Nintendo Wii was the last to use this dated architecture. 
+* In 2002 GPUs started including fragment and vertex shaders. A shader is a programmable piece of the pipeline. In reality we send small or sometimes large shader programs to each of these units. these programs are written in C.
+* Up to now we had 3js do the programming for us. when we create a material 3js creates 2 small programs . one for the vertex and one for the fragment shader. when the object with that material is to be dispalyed these 2 shaders are loaded with the programs. triangles are sent down the pipeline and program executes.
+
+### Compute Chip Design Challenges.
+
+* The decision to make parts of the pipeline programmable is one of the challengesof computer chip design. Designers have to decide:
+	* how many transistors are dedicated to memory cache and registers. (CPUs)
+	* how many to instruction processing (CPUs) & (lately GPUs)
+	* how many to dedicated algorithm logic AKA Fixed-Function Processing (GPUs) 
+* Fixed Function Logic is extremely fast and cost effective but is locked. The trend with modern GPUs is to add more instruction processing to GPUs for programmability (See shaders). only commin test have programmed as baked in silicon (the rest of the pipeline)
+
+### Vertex and Fragment Shaders
+
+* Vertex Shader:  performs transform of the vertex position to the screen, its input is the vertex of the triangle and programmer data like matrices and materials. the output is is a vertex with a transformed position. and maybe other info like the normal (scren space vertex, other data)
+* The tranform triangle is then rasterized. 
+* Triangle setup: sends data at each pixel inside the triangle to anothe rprogrammable unit the fragment shader.
+* Framgnet Shader: It is handed various infromation from the trnagle being processed. like vertex shader programmer can feed any data neede to process the triangle data at each pixel. shader runs and the output (a fragment) is typically a color and a z-dept and possibly an alpha val. we call it fragment because it represents the piece of the triangle covered by the pixel. 
+* Z buffer test: at this point fragment color and zdepth is compared to the stored depth of the z-buffer. if the fragent is closer than the z-depth previously stored the triangle is visible at this pixel and its color is saved
+* Vertex and fragment shaders are similar in their function. Modern GOUs use unified shaders in HW, these shaders are assigned at runtime as vertex or fragment depending on the bottleneck.
+
+### Quiz:Fragmen SHader Bottleneck
+
+* [HW capabilities test](http://webglreport.com/)[webgl extensions](https://www.khronos.org/registry/webgl/extensions/)
+* Our dummy GPU has a single vertex and a single fragment shader. ideas for next chip (test z depth before fragment shader make shaders to be used as vertex or fragnemnt). 99.4 of fragment shaders do not touch z buffer
+
+### Shader Architecture
+
+* Blinn-Phong Model was burned into silicon in older GPUs offerign afixed function logic for shading. variations were possible with hacks. light camera material reuslted in pixel color.
+
+### Shader Inputs
+
+* [uniform types](https://github.com/mrdoob/three.js/wiki/Uniforms-types)
+* [custom attributes](http://alteredqualia.com/three/examples/webgl_custom_attributes_particles.html)[custom2](http://alteredqualia.com/three/examples/webgl_custom_attributes.html)
+* once vertex and fragment shaders became available all this changed. we can now program whtever function we want.
+* when we select a material and a lighting.3JS lib under the hood creates efficient vertex and fragment shader programs for us.
+* We can create our own material using 3JS ShaderMaterial. bot shaders have similar structures. we first define inputs to shader. there a 2 kinds of declarations. uniform and varying.
+* In WebGL there are attributes to a vertex shader like vertex position normal and UV coordinate data. these attributes are built in 3js so no need to be declarted. they have same names: position, normal, uv.
+* Uniform data is whatever is constant to the triangle being shaded. e.g position of light sources and color and shininess of material.
+* A var is varyinng if it is computed or outputed by the vertex shader and passed t framgnet shader as input
+* Vertex shader outputs these vals and rasterizer interpolates them accross the triangle surface. these val can and will vary per fragment.
+* THe more data per vertex we want interpolated . the more time it takes
+* Framgnet shader also takes uniform data as inputs. fragment shader as minimum outpiuts a fragent color with name GL frag color. In fact in many APIs framgnet shader can output to many images at once (MRT multiple render targets). WebGL does not support this yet.
+* SUMMARY. In: UNif: Lights,camera, Materials Attr: Position, Normal, UV -> Vertex Shader => Out: GL_Position => IN: Unifroms: Light, camera,material, Varying:L GL_Position => Fragment Shader => Out: GL FragColor
+
+### Quiz: Legal Inputs and Outputs
+
+* which is true: FS can use interpolates shading normal. VS can output a color for a FS to use
+* each vertex is processed separately by vertexshader.
+* geometry shader allows processing multipel vertexes at once. not supported by WebGL
