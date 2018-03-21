@@ -2872,3 +2872,192 @@ for (var i=0; i <8000; i++) {
 * which is true: FS can use interpolates shading normal. VS can output a color for a FS to use
 * each vertex is processed separately by vertexshader.
 * geometry shader allows processing multipel vertexes at once. not supported by WebGL
+
+### GLSL ES
+
+* OpenGL Shading Language: [reference site](https://www.khronos.org/registry/OpenGL/index_gl.php/)[lang desc](https://www.khronos.org/opengl/wiki/OpenGL_Shading_Language)[manual](https://www.khronos.org/registry/OpenGL-Refpages/gl4/index.php)[datatypes](http://www.lighthouse3d.com/tutorials/glsl-12-tutorial/data-types-and-variables/)[refguide](http://www.cs.cmu.edu/afs/cs/academic/class/15462-f10/www/lec_slides/glslref.pdf)[official spec](https://www.khronos.org/registry/OpenGL/specs/es/2.0/GLSL_ES_Specification_1.00.pdf)
+* the heart of a shader is the program it runs. the program is passed to the GPU as a string of chars. not as binary or compiled data.
+* WebGL Shaders are written in GLSES(OpenGL Shading Lang for Embedded Systems)
+* The graphics driver gets the character string and compiles it to assembly sent to GPU.
+* an example of creating a shader string in Javascript
+
+```
+vertexShader: [
+	"uniform vec3 uMaterialColor;",
+	"uniform vec3 uDirLight;",
+
+	"varying vec3 vColor;",
+
+	"void main() {",
+	// transform the vertex from model space to clip coordinates
+	"gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);",
+	"vec3 light = normalize( uDirLight);",
+
+	// compute a diffuse color using Lambertial reflection, N * L
+	"float diffuse - max(dot(normal, light), 0.0);",
+
+	"vColor = uMaterialColor * diffuse;",
+	"}"
+].join('\n');
+```
+
+* js says its going to define an array of strings
+* we define a string for each line of our program. its a way to get progrma sin 3JS but not very convenient
+* with this method we can add strings on the fly to make shaders. this is what 3JS. when we ask for 3lights on a shiny material. it creates a custom shader for these elemnents. if we have a fixed shader we can make our program a text resource (.txt)
+
+### Vertex Shader Example
+
+* [matrices](https://github.com/mrdoob/three.js/issues/1188#issuecomment-3666286)[renderer](https://github.com/mrdoob/three.js/blob/master/src/renderers/WebGLRenderer.js#L6469)
+* GLSL Lang is like C. the previous code snippet is a GLSL vertex shader in JS code. GLSL has vector support built in. 
+* this vertex shader computes the lambertian diffuse lighting component at each vertex, material color and light direction is passed as uniform inputs.
+* the output is a varying param (vectror 3 ) which is the color. this will be used in the fragment shader.
+* A vertex shader must always output gl_position. this contains the clipping coordinates of the vertex location on screen.
+* next it normalizes the direction to the light. diffuse color is computed as the dot product much like the theory. we use max to make sure result is non negative (when surface point away from light) (it would be like sucking energy from lihgt (black hole))
+* in last likne we multiple vectors in an one-liner (sweet)
+
+### Fragment Shader Example
+
+* [webtool glsl](http://pixelshaders.com/sample/)[pixelshaders](http://pixelshaders.com/)[sublimetext glsls addon](https://github.com/euler0/sublime-glsl)[shader validator](https://github.com/WebGLTools/GL-Shader-Validator)
+* our example vertex shader generates gl_position (clip coordinate position) and vColor (diffuse color at vertex). These are passed to the rasterizer (HW) that interpolates these against the ttriangle and creates fragments. each gragment is passed to fragment shader.
+* Fragment Shader is simpler. it just takes thjje interpolated color (vColor) and copies it to gl_FragColor the veec4 built in output variable for awhat color appears on screen. 4th val is the alpha val
+
+```
+varying vec3 vColor;
+
+void main(){
+	gl_FragColor = vec4(vColor, 1.0);
+}
+```
+
+* another example of vector operations in GLSL 
+
+```
+vec3 uSpecularColor;
+float specular
+...
+glFragColor.rgb += specular *  uSpecularColor;
+```
+
+* the name for 4 elements of Vec4 are (x,y,z,w) points and vectors (r,g,b,a) for colors (s,t,p.q) for texture coordinates S and t are like U,V
+* WEBGL renderer throws debug errors.
+
+### Cartoon Shading
+
+* a way to give a cartoon like appearance to a surface is to give it 2 shades of the same color.
+* we will do the same with the diffuse shader we just used in our example.
+* we can define a critical angle for the dot product if the val is higer we give alight tone if not a dark tone.
+
+### Quiz: Two Tone Shading
+
+* if the dot product is greater tha uBorder then diffuse is 1.0 else is 0.5
+* use floats and nums should have decimals
+
+```
+	// Student: check the diffuse dot product against uBorder and adjust
+	// this diffuse value accordingly.
+    float diffuse = max(dot(normal,lVector),0.0);
+    if (diffuse > uBorder) {
+        diffuse = 1.0;
+    } else {
+        diffuse = 0.5;
+    }
+```
+
+### Non-Photorealistic Rendering
+
+* this type of rendering is called NPR or toon rendering.
+* [examples](http://www.floored.com/blog/2014sketch-rendering/)
+* itrs main point of failure is transparency. image process is better for cel shading
+
+### Vertex Shading Programming
+
+* usually we tamper with the fragment shader in aprogram as thats wehere per pixel processing happens.
+* we go back to show how params are produces by the vertex shader.
+* position and normal of vertex are passed as position and normal
+* some builtIn matrices are used for transformation, namly projectionMatrix etc
+* in 3JS these matrice are always available in the shader. in WebGL we need to do more work. there is no modelViewProjectionMatrix in these two matrices. (mormal normalMatrix) mutliplied together.
+```
+varying vec3 vNormal;
+varying vec3 vViewPosition;
+
+void main() {
+	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+	vNormal = normalize( normalMatrix *  normal);
+	vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+	vViewPosition = -mvPosition.xyz;
+}
+```
+
+* what we get from this shader are a few vectors. gl_Poisition is set (location in clip coordinates). this is the minimum output of a vertex shader
+* in vertex shader we can change the shape of an object. the normal in modelView space is computed in vertex shader (vNormal) using the normal transform matrix. 
+* finally a vertex from the vertex location in modelView space towards the viewer is computed (vViewPosition). first position is computed and then negating this vector gives direction to the viewer from the surface.
+* camera is at origin in view space.
+* To SUMUP vertex shader takes vertex position and normal. calculates gl_position for rasterizer in clipped coordinates. it also transforms normal and position at viewspace
+* the resulting transform vertices are interpolated across the triangle during rasterization and sent to fragment shader for each fragment produced.
+
+
+### Procedural Textures
+
+* [proc texture example](https://threejs.org/examples/#webgl_shader_lava)
+* we ve shown how a texture can be added to a model. but these mapping are skin deep (on surface). if we carve away a part of the object the fact that we use 2d textures is revealed.
+* what we wwould like is something like a real material in 3D. the solution is to create 3d texture that fills space.
+* One way to do it is use a stack of images. but 3D texturtes are not yet available in WebGL.
+* another way is make a function that takes a point on a surface and gives back a color. *texturefunction(point) => color*. we need to be careful and filter the results. we can shade points on surfaces any way we want with fragment shaders.
+
+### Quiz:3D Procedural Texturing
+
+* [book](https://www.amazon.com/Texturing-Modeling-Third-Procedural-Approach/dp/1558608486?tag=realtimerenderin)
+* add sinus waves in each direction diffuse = 0.5 + 0.5 * sin(uScale.posx) * sin(uScale.posy) * sin(uScale.posz) 
+
+```
+	// Student: use the vModelPosition as an input to a function and
+	// then multiply the diffuse contribution by this amount.
+	diffuse *= (0.5 + 0.5*sin(uScale*vModelPosition.x)*sin(uScale*vModelPosition.y)*sin(uScale*vModelPosition.z));
+```
+
+### Debugging Shaders
+
+* [debug tools](http://www.realtimerendering.com/blog/webgl-debugging-and-profiling-tools/)[cryenbgine](https://www.cryengine.com/)
+* [canvas debug](http://learningthreejs.com/blog/2013/04/05/debugging-with-chromes-canvas-inspection/)
+* [fastStone](http://www.faststone.org/FSCaptureDetail.htm)
+* we use a different procedural texture. it works well but we need to know about another debugging technique. we cant put breakpoints in a shhader. the answer is to sent shader computations on screen
+* instead of puting our final result in gl_fragcolor w eput other intermediate values. our task is to send 3 program values diffuse (red channel), uGainAlpha (green value) attenuation (blue channel)
+* we can use subrootines in shaders they are written in C.
+
+```
+	// Student: instead output diffuse, uGainAlpha, attenuation to RGB
+	//gl_FragColor = vec4( uKd * uMaterialColor * uDirLightColor * diffuse, 1.0 );
+	gl_FragColor = vec4( diffuse, uGainAlpha, attenuation, 1.0 );
+```
+
+* alternate solution
+
+```
+ // alternate solution: //gl_FragColor.r = diffuse; //gl_FragColor.g = uGainAlpha; //gl_FragColor.b = attenuation; //gl_FragColor.a = 1.0;
+```
+
+### Fresnel Reflectance
+
+* [wiki equations](https://en.wikipedia.org/wiki/Fresnel_equations)[article](https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/)[schlik approximation](https://en.wikipedia.org/wiki/Schlick%27s_approximation)[problem](http://geekshavefeelings.com/x/wp-content/uploads/2010/03/Its-Really-Not-a-Rendering-Bug-You-see....pdf)
+* in physical phenomenon that is sometimes factored in the illumination model is described by the fresnel equations. these equations have to do with reflection and refraction of light on a surface. the more on edge you look at a surface the more reflective it is.
+* if the surface is refractive(transparent) the amount of light tranmitted will drop off considerabley as we approach the shallow edge. as we look directly down we see no distortion in angle but as we get distange(larger angle) refraction takes effect.
+* fresnel phenomenon is prevalent in dielectric materials(insulators) glass plastic clay. glass is 25 times more reflectly ata ashallow angle than directly look upon. fresnel effect lessens diffuse contribution (less photons left to go on all directions, reflection takes prevalence.). 
+* we shold use the normal that represents mirror orientation. for a mirror reflective surface this is the shading normal.  with blingphong illumination formula surface is made of microfacets. only some facets are directed to reflet light to the eye (normals pointing halfway between the eye and light) "half eye vector". this si a vector used for specular highlight. we have to use this and not the shading normal. edge on angle causes reflectivity to increase
+
+### Energy Balanced Materials
+
+* [article](http://www.thetenthplanet.de/archives/3684)
+* bling phong reflection model has been used for 30years. initialy baked in HW its easy to understand and control. a technique used on this model is to give the specular highlight a diferent  color than the diffuse component.
+* if the specula component is given a white color the object looks like a shiny plastic. 
+* if specular and diffuse component are multiplied with same color the object looks metallic
+* this model is not energy balanced. when we cahnge shininess the object looks smoother. but the light reflected becomes grater.
+* if we look at blinn phong equation Specular = Max(N * H , 0)^(shininess) we see that if we plot Hto H angle vs specular intesity is like a bell curve. cos^3 area is smaller than cos. the amount of energy coming from the surface is less for shinier materials
+* an idea is to attenuate specular term by the lambersian fail off. (N * L) * Specular * (s+2)/8
+* like diffuse this makes specular term drom off as the angle of light to surface becomes less straight 
+* other idea is to make narrower curves higher giving them same volume this is the last term in our addition
+* the whole equation is called energy balanced blinn phong.
+* also energy nalance solves the issue with specular foll off. no sudden drop to zero
+
+### Physically based Materials
+
+* [overview](https://www.marmoset.co/posts/basic-theory-of-physically-based-rendering/)
