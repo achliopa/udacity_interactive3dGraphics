@@ -20,11 +20,14 @@ uniform float uSphereRadius2;	// squared
 
 void main() {
 	// Student: modify position. You'll need to copy it to a
-	// temporary vector and modify the temporary. 
+	// temporary vector and modify the temporary.
+	vec3 tempPosition = position;
+	// ZPOS = sqrt(uSphereRadius2 - XPOS^2 - YPOS^2) -  sqrt(uSphereRadius2)
+	tempPosition.z = sqrt(uSphereRadius2 - (tempPosition.x*tempPosition.x) - (tempPosition.y*tempPosition.y)) - sqrt(uSphereRadius2);
 	// Don't forget to use this temporary in the rest of the shader.
-	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+	gl_Position = projectionMatrix * modelViewMatrix * vec4( tempPosition, 1.0 );
 	vNormal = normalize( normalMatrix * normal );
-	vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+	vec4 mvPosition = modelViewMatrix * vec4( tempPosition, 1.0 );
 	vViewPosition = -mvPosition.xyz;
 }
 		</script>
