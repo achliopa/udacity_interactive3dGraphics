@@ -3061,3 +3061,190 @@ void main() {
 ### Physically based Materials
 
 * [overview](https://www.marmoset.co/posts/basic-theory-of-physically-based-rendering/)
+* further restrictions can be built into the reflection model like maintaining energy conservation. so that there is not more energy reflected from a surface than shined on it. e.g diffuse term should drop off when specular term is stronfger. 
+* this reflectyion model is called physically based as it resembles reality. there is a trend towards it in film and game industry. materials are more understandable by artists. e.g with an energy balanced blinn-phong material we can adjust shininess without having to adjust the intensity. even when we simulate daylighht, in twilight light is less. instead of making everything dark with ambient light. some render systems try to adapt. like a real camera does with exposure.
+* one way is to compute a high res image anbd adjust brightness and contrast. this si tone mapping
+
+### BRDF
+
+* [intro2010](http://renderwonk.com/publications/s2010-shading-course/hoffman/s2010_physically_based_shading_hoffman_a.pdf)[slides2012](http://blog.selfshadow.com/publications/s2012-shading-course/hoffman/s2012_pbs_physics_math_slides.pdf)[backnotes2012](http://blog.selfshadow.com/publications/s2012-shading-course/hoffman/s2012_pbs_physics_math_notes.pdf)
+* how material can be represented in a more general way. think of a surface and how it reflects light.
+* the two variables we use is the lights incoming direction and the amount of light reflected towards the eye.
+* at its simplest a material can be represented by this function *intensity = material(light,eye)* given light and eye direction give back ethe intesity.
+* this function is called Bidirectional Reflectance Distribution Function
+* function depends of two direction so is bidirectional
+* these vectors are usually given with respect to the surface itself. so vectr is given as 2 numbers. altitude and azimuth.
+* altitude is the angle away from the normal and azimuth the angle of the vector when projected to the plain.
+reflectance means how light is spread. for example in a perfect mirror. the reflectance distribution is that when the eyes direction is equal to the lights reflection direction all light goes in the eye. any other direction gets no light.
+* in diffuse reflection for some light direction the direction to the eye doesnt matter. as diffuse val is constant diffuse is represented as a hemisphere surface.
+* specular highlights are represented by lobes. it represents a glossy surfase when light is reflected in a general direction.
+
+### Quiz:Anisotropic Material
+
+* we see a material that when we rotate it it does not change how they reflect the light. (bell) another changes how it reflects the light. these materials are called anisotropic. to make a material anisotropic is to give it a pair of normals instead of a single one.
+* in this exercise we start with the energy balance to blinn phong reflection model for a plane.
+* we change the single normal to be two normals (symmetric) as if material has grooves in it.
+* if we look in fragment shader we see the cheat. we take the fragment location and use its x and z position to make these two new normals. we can do it as we know that theoriginal normal is pointing up the y axis.
+* our job is to take these two normals and use them instead of the original one. we need to apply the reflection model twice. once to each normal. to keep energy balnce we make these two contributions half strong. GlSL supports for loops.
+
+```
+	// Student: use these two jiggledNormals instead of the regular normal
+	// in the reflection model that follows.
+	for ( int i = 0; i < 2; i++) {
+		vec3 offset = (i==0) ? vWorldPosition : -vWorldPosition;
+		offset.y = 0.0;
+		vec3 jiggledNormal = normalize( normal + uGroove * normalize( offset ) );
+
+		// diffuse: N * L. Normal must be normalized, since it's interpolated.
+		float diffuse = max( dot( jiggledNormal, lVector ), 0.0);
+
+		gl_FragColor.rgb += 0.5 * uKd * uMaterialColor * uDirLightColor * diffuse;
+
+		// specular: N * H to a power. H is light vector + view vector
+		vec3 viewPosition = normalize( vViewPosition );
+		vec3 pointHalfVector = normalize( lVector + viewPosition );
+		float pointDotNormalHalf = max( dot(jiggledNormal, pointHalfVector ), 0.0 );
+		float specular = uKs * pow( pointDotNormalHalf, shininess );
+		specular *= diffuse*(2.0 + shininess)/8.0;
+
+		// This can give a hard termination to the highlight, but it's better than some weird sparkle.
+		// Note: we don't quit here because the solution will use this code twice.
+		if (diffuse <= 0.0) {
+			specular = 0.0;
+		}
+
+		gl_FragColor.rgb += 0.5 * uDirLightColor * uSpecularColor * specular;
+	}
+```
+
+### BSDF and BSSRDF
+
+* [photorealizer](http://photorealizer.blogspot.gr/2012/05/diffuse-and-specular-reflection.html)[Physicall Shading](http://blog.selfshadow.com/publications/s2013-shading-course/)[skin demo](https://threejs.org/examples/#webgl_materials_bumpmap_skin)[photskin](https://threejs.org/examples/#webgl_materials_skin)[gpugems](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_pref01.html)
+* in the prevvious quoiz the anisotropic fynction was intuitive.there is bibliography on how to capture BRDFs from materials and how to make shader functions to represent them.
+* Apart from BRDF there is BSDF(BiDirectional Scattering Distribution Function). This function caputres how light reflects and transmits through material.
+* BSSRDF (Bidirectional Surface Scattering Reflectance Distribution Function). This function is important for materials like marble and milk. for these materials light enters a location on the surface. bounces around inside the material and comes out somewhere nearby.
+* another material that has this sort of scattering is skin. getting skin to look good for interactive rendering is not easy. but results are better
+* the key factor is scale. the effect of subsurface scattering lessens as the distance from the object increases. 
+* in close ups a photon might exit the surface a fair number of pixels away from where it entered the surface. looking from further away there might be no change in pixel location.
+* the diffuse component for non metallic materials comes from subsurface scattering. in many cases this scatteing is over an impercptably small distance. metallic materials are all specular. no lambertian diffuse term.
+* diffuse is an approximation. a cheap way to look plausible.
+* at ana tomic level metallic objects have a free floating soup of electrons on their surface which absorb and reemit photons
+* a proper chice of materials speed up sw and reduces the need for recalculations because of light.
+
+### Monitor Response and Perception
+
+* [gammacorrectionarticle](https://en.wikipedia.org/wiki/Gamma_correction)[gpugems3-gamma](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch24.html)[gammacorrected](http://www.realtimerendering.com/gamma22.png)[uncorrected](http://www.realtimerendering.com/gamma10.png)
+* say we want to have some pixel hsve half the intensity of some given pixel. typically we would half all pixes channels. 
+* the problem is that displays do not respond in that way. they are not linear.it has a power law response to an input signal. if we send a signal of 0.5 we get output of 0.25. we cannot fix the monitor because our eyes have similar response.
+* the monitor has a limited levels of color that can dislay. to get a good coverage that an eye can detect. it is a fine thing to space these levels in non linear way.
+* we think we calculate levels in a linear space. we half the intense and expect ot see it on screen. many apps ignore the nonlinearity. and its less noticable. but as we work on the upper half of level non-linearity is an issue.
+* Problems that occur because of that are
+	* Lights do not add up correctly. if we have two spotlights the overlaping area wont be double the intensity.
+	* THe hues of colors can shift. channels shfift non linearly, so perceived hue shifts.
+	* anti aliasing wont work as good. as edges are half light. non-linearity causes dimming.(braiding roping)
+	* mipmaped textures will appear dimmer in the distance.
+
+### Gamma Correction
+
+* [presentation](http://www.thetenthplanet.de/archives/3684)[gpugems-gamm](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch24.html)[gamma](http://filmicworlds.com/blog/linear-space-lighting-i-e-gamma/)[sRGB](https://en.wikipedia.org/wiki/SRGB)[webGL sRGB extension](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/)[webGL](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_sRGB.txt)
+* The solution to the problems stated is Gamma Correction.
+* We want to compute our renderings in a linear space. we want to compensate for the power curve of the monitors.
+* at its simplest the gamma correction function would be like *display channel value=(computed channel value)^(1/2.2)*
+* 2.2 is the gamma correction value.
+* 3JS has gamma correction built in
+* when we watcha ta color swatch or a texture on the screen we are seeing the monitors power curve version of the data. if we want to use this data when computing lighting effects, we have to raise each channels val to a power of 2.2 before using it for anything *computed channel value = (input texture Value)^2.2*. anything like mipmaps or making images. 3js makes on the fly approximation sqwuaring color when it is sampled.
+To sum up what we see on screen is based in the power curve. to use it in our computation we raise it to 2.2(renderer.gammaInput=true;). to put our computations on screen we raie it to 1/2.2(renderer.gammaOutput=true)
+
+### Texturing and Postprocessing
+
+* [tutorial](https://www.airtightinteractive.com/2013/02/intro-to-pixel-shaders-in-three-js/)[demo](https://www.airtightinteractive.com/demos/js/shaders/preview/)[tutorial1](http://stemkoski.github.io/Three.js/#Shader-Simple)[tutorial2](http://stemkoski.github.io/Three.js/#Camera-Texture)[webgl filter](http://evanw.github.io/webgl-filter/)[imageprocweb](https://29a.ch/sandbox/2012/fluidwebgl/)[lumaluminance](http://poynton.ca/notes/colour_and_gamma/ColorFAQ.html)
+* we havent talked about texture access in fragment shaders. 
+* we can access textures in fragment shaders `vec 4 texelColor = texture2D(map, vUv);` 
+* the theory of sampling and filtering is the same like in normal 3JS code. the rest is stting up the texture access. in shader we use the texture 2D function. this gives the color of the texture to use it in the shader. there are >40 shaders that use texture access in 3JS. they are in WebGLShaders.js
+* another function is textureCube for cubemaps which takes a 3D direction as input.
+
+```
+vec4 cubeColor = textureCube( tCube, 
+		vec3(-vReflect.x, y.Reflect.y));
+```
+
+* many of the rest of the shaders perform image processing, where image pixels are used to form another image. e.g we want to form a grayscale image from a color image. the equation is *luminance=0.212671R+0.715160G+0.072169B* this equation uses linearized colors and luminance is intensity for grayscale.
+* another equation for luma *LUMA=0.30R+0.59G+0.11B* for when the inputs are non gamma corrected.
+* we can assume that we can add these formulasa as a final step in fragment shader. hoowever alpha channel is a problem. this is a post process. we want to convert to grayscale after the scen is rendered. but then its too late. the image is already on screen.
+* but we can send an image off screen and have it become a texture. this is called offscreen texture or pixel buffer or render target.
+* this texture is not a typical texture is not a powers of 2. it is not normally 512by512 or something to use on a mipmap chain
+* our goal is to perform image processing on this so-called texture. we want for our example to read a pixel from this texture and convert it t gray.
+* we would like to read a texel process it and spit it as apixel. but GPU is optimized fro triangles and textures
+* how we use this texture is to draw a single rectangle with u/v coords that fills the screen. (screen filling quad). the u, v vals are used in fragment shader to precicelly grab a single texel that corresponds to our final output pixel on screen.
+* maybe it seems ineficient but is fast ienought to allow multiple passed to be done per frame.
+* in 3JS the EffectComposer class lets us create and chain different passes together with just a few lines of code
+* for our grayscale post process our code is below it contains a vertex and fragment shader follwoing the logic abopve of a single square texture
+
+```
+// vertex shader
+varying vec2 vUv;
+
+void main(){
+	vUv = uv;
+	gl_position = projectionMatrix * modelViewMatrix * vec4(position,1.0); 
+}
+
+uniform sampler2D tDiffuse;
+varying vec2 vUv;
+// fragment shader
+void main() {
+	vec4 cTextureScreen = texture2D(tDiffuse, vUv);
+
+	// luma for non-gam-corrected computations
+	vec3 = lumaColor = vec3(
+			cTextureScreen.r * 0.3 +
+			cTextureScreen.g * 0.59 +
+			cTextureScreen.b * 0.11
+		);
+
+	gl_FragColor.rgb = vec4(lumaCOlor, 1.0);
+}
+```
+
+* the vertex shader copies the u,v val and projects the screen filling quad to clip coordinates
+* the whole pointof rendering teh rectangle is to force fragment shader to evaluate at every pixel
+* the fragment shader code is simple. the texture is accessed by screen loc, so each texel is associated to the output pixel. we use the color of the texel to compute grayscale coloe. the color is saved to fragcolor and we are done
+* we can stack postprocessing. e.g blurrign can be done in 2 stages. horizontal and vertical. multiple passes canbe memory efficient. sometimes the image is pingponged between post processing passes.
+
+### Quiz:Gamma Banding
+
+* we can do gamma correction as post process. it is a problem to do  gamma correction if we have just 8 bits per channel. gamma correcting a 0-255 val and converting back to hex lower the resolution to 184 unique vals so we lose resolution 
+* code to calculate
+
+```
+var count = 0;
+var prev = -1;
+for(var i=0;i<256;i++) {
+	var inFloat = Math.pow(i/255,1/2.2);
+	var found = Math.round(infloat*255);
+	console.log("For" + i + "gamma corrected: "+inFLoat+", channel "+ found);
+	// if this next val doesnt match previous note itis a channel that is used
+	if(found !== prev) {++count;}
+	prev=found; 
+} console.log("different levels output: "+count);
+```
+
+* this loss of resolution causes banding
+
+
+### CONCLUSION
+
+* [Shader School](https://github.com/stackgl/shader-school)[answers](https://github.com/drewlustro/shader-school-answers)[shader demo1](https://www.shadertoy.com/)[rt rendering](http://advances.realtimerendering.com/)[prog shading](http://bps12.idav.ucdavis.edu/)
+
+## Lesson 20 - Problem Set
+
+### 1.Quiz:Vertex or Fragment Shader?
+
+* Blurring Image (image processing so fragment shader)
+* Changing an objects shape (vertex shader)
+* evaluating an illumination model (both)
+* performing gouraud interpolation (n rasterization so none) 
+
+### 2.Quiz:Make a Moving FlashLight
+
+* 
