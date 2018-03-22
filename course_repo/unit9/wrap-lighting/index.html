@@ -56,7 +56,7 @@ void main() {
 
 	// Diffuse: N * L.
 	// Student: modify diffuse here with wrap equation. Wrap is passed in as "uWrap".
-	float diffuse = max( dot( normal, lVector ), 0.0 );
+	float diffuse = max( (dot( normal, lVector)+uWrap)/(1.0+uWrap), 0.0 );
 
 	// This can give a hard termination to the highlight, but it's better than some weird sparkle.
 	if (diffuse <= 0.0) {

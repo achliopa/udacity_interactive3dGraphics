@@ -38,7 +38,7 @@ function fillScene() {
 
 	var teapotMaterial = new THREE.MeshPhongMaterial(
 		{ color: 0x770000, specular:0xffaaaa } );
-
+	teapotMaterial.envMap = textureCube;
 	var teapot = new THREE.Mesh(
 		new THREE.TeapotGeometry( teapotSize,
 			8, true, true, true, true, true ),

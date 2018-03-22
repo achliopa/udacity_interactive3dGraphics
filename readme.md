@@ -1,6 +1,7 @@
 # Udacity Course: Interactive 3D Graphics with WebGl and three.js
 
 [wiki](https://www.udacity.com/wiki/cs291?nocache#!#five-great-tips)
+[reference](https://www.udacity.com/wiki/cs291/threejs-reference)
 
 ## Leeson 1: Introduction
 
@@ -2738,11 +2739,7 @@ for (var i=0; i <8000; i++) {
 
 * [tutorial](http://codeflow.org/entries/2011/apr/18/advanced-webgl-part-3-irradiance-environment-map/)
 * [paper](http://www.sci.utah.edu/~bigler/images/msthesis/The%20irradiance%20volume.pdf)
-<<<<<<< HEAD
 * [farcry use](http://fileadmin.cs.lth.se/cs/Education/EDAN35/lectures/L10b-Nikolay_DRTV.pdf)
-=======
-* [far cry use](http://fileadmin.cs.lth.se/cs/Education/EDAN35/lectures/L10b-Nikolay_DRTV.pdf)
->>>>>>> 157ff86fc4a91617b1c16eaac6cb4fe873194983
 * [amazing demo](http://codeflow.org/entries/2012/aug/25/webgl-deferred-irradiance-volumes/)
 * in 3JS we can use irradiance map as paint
 * CHECK HIGLY DYNAMIC RANGE TEXTURES (HDR) used in plastics as they pick up bright lights reflections.
@@ -2809,6 +2806,50 @@ for (var i=0; i <8000; i++) {
 ```
 
 * add transparency, keep double side.
+
+### 5.Quiz:Specular Mapping
+
+* anything can be changed with texture mapping. beyond color and alpha we can change the shininess for different locations on the body. face is shini back of head not so. we see a color texture and a specular texture for a face. in 3js, the specular map uses the red channel of the texture as a strength of the specular contribution. a val of 255 means the spec  component is scaled to 1. 
+* our task is to apply a texture as a specular map. check online on how to set the specul;ar map for a meshphong material.
+
+```
+	var specularTexture = THREE.ImageUtils.loadTexture("/media/img/cs291/textures/water.jpg");
+	var material = new THREE.MeshPhongMaterial( { shininess: 50 } );
+	material.specularMap = specularTexture;
+```
+
+* if we want to see a water image as color texture use this
+
+```
+var texture = THREE.ImageUtils.loadTexture( '/media/img/cs291/textures/water.jpg' );
+var material = new THREE.MeshPhongMaterial( { shininess: 50 } );
+material.map = texture;
+material.color.setHSL( 0.09, 0.46, 0.8 );
+```
+
+### 6.Quiz:BumpMap Filtering
+
+* for color textures we saw that MIP maping improved the quality of the images. noisy patterns blurred out
+* normal maps can suffer same problems with noisy sparkles twinkling on and off. as we happen to catch anormal that reflects light directly to our eye. 
+* if we use mipmaping on the normal map at mip level 1 bumps dissapear as 2 normal at each side of bump will cancel each other. mip map is avoided on normal maps.
+
+### 7.Reflection Mapping
+
+* same as specular mapping. we set the image texture to be the environment map of the teapot
+
+	var path = txrpath + "media/img/cs291/textures/skybox/";
+	var urls = [path + "px.jpg", path + "nx.jpg",
+				path + "py.jpg", path + "ny.jpg",
+				path + "pz.jpg", path + "nz.jpg" ];
+
+	var textureCube = THREE.ImageUtils.loadTextureCube( urls );
+	textureCube.format = THREE.RGBFormat;
+var teapotMaterial = new THREE.MeshPhongMaterial(
+		{ color: 0x770000, specular:0xffaaaa } );
+	teapotMaterial.envMap = textureCube;
+```
+
+* [demo](https://threejs.org/examples/#webgl_materials_cars)
 
 ## Lesson 19 - Shader Programming
 
@@ -3247,4 +3288,119 @@ for(var i=0;i<256;i++) {
 
 ### 2.Quiz:Make a Moving FlashLight
 
-* 
+* we will implement a flashlight effect. currently the effect is not realistic as light does not move around
+
+```
+// flashlight: is XY point in camera space inside radius?
+if (length(vViewPosition.xy) > uFlashRadius) {
+	return;
+}
+```
+
+* the code above is added to fragment shader. the vViewPosition is the location of surface in view sspace. actually this is the position negated. as viewspace is looking down the negative z axis and x and y are 0 at the center of the screen, flashlight always shines in the middle. we return early if the surface is outside the flashlight radius  so that only ambient contribution lights the object. 
+* we have added uniform vec2 uFlashOffset a 2 eleemnt vector that gives the center point of the flashlight. it is connected to gui sliders but the shader ignores it. it is our task to use it.
+* if the x,y view position in this location are close enough together the flashlight must illuminate the surface
+
+```
+	// flashlight: is XY point in camera space inside radius?
+	// Student: compare view position to uFlashOffset and see
+	// if distance between the two is inside uFlashRadius
+	if ( distance(vViewPosition.xy,uFlashOffset) > uFlashRadius) {
+		return;
+	}
+```
+
+### 3.Quiz:Model Deformation
+
+* in this excercise we start with a square tesselated into a grid of smaller squares, this grid allows us to deform the surface. Deformation happens in the vertex shader. What we have to do is modify the incoming vertex *position* 
+
+
+```
+varying vec3 vNormal;
+varying vec3 vViewPosition;
+
+uniform float uSphereRadius2; //squared
+
+void main() {
+	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+	vNormal = normalize(normalMatrix * normal);
+	vec4 mvPosition - modelViewMatrix * vec4(position,1.0);
+	vViewPosition = -mvPosition.xyz;
+}
+```
+
+* as this is an innput var we have to copy it to a temp var and mod this instead. we need to use this temp in all shader istead of *position*
+*  to modify the positon we have to use this formula `ZPOS = sqrt(uSphereRadius2 - XPOS^2 - YPOS^2) -  sqrt(uSphereRadius2)`. the first half of the func finds a poin on the sphere. the second translates the whole object by a constant amount so it stays in view.  the  *uSphereRadius2* is a var passed by the main program. its the square of the radius set with a gui slider. XPOS, YPOS< ZPOS are the position coordinates. * to access an individual val of a vector use vector.x or y or z. 
+* when we are done we should see something like a surface part of a sphere.
+* solution
+
+```
+void main() {
+	// Student: modify position. You'll need to copy it to a
+	// temporary vector and modify the temporary.
+	vec3 tempPosition = position;
+	// ZPOS = sqrt(uSphereRadius2 - XPOS^2 - YPOS^2) -  sqrt(uSphereRadius2)
+	tempPosition.z = sqrt(uSphereRadius2 - (tempPosition.x*tempPosition.x) - (tempPosition.y*tempPosition.y)) - sqrt(uSphereRadius2);
+	// Don't forget to use this temporary in the rest of the shader.
+	gl_Position = projectionMatrix * modelViewMatrix * vec4( tempPosition, 1.0 );
+	vNormal = normalize( normalMatrix * normal );
+	vec4 mvPosition = modelViewMatrix * vec4( tempPosition, 1.0 );
+	vViewPosition = -mvPosition.xyz;
+}
+```
+
+* illumination is not good because vertex shader did not change shading normals
+
+### 5.Quiz:Vertex Normal Creation
+
+* [tutorial](http://stemkoski.github.io/Three.js/#Graphulus-Function)[water demo](http://madebyevan.com/webgl-water/)[demo](http://stemkoski.github.io/Three.js/Graphulus-Function.html)
+* in addition to computing a new position to form a piece of sphere surface, we have to set the normal to look right. for a sphere centered atr the origin this is straightforward. normal and vectyor to the point match.
+* we take the solutionb from the previous problem and chang ethe shading normal to point at the right direction. we again have to use a temporary normal.we dont have to normalize it as this will be done in the fragment shader.
+
+```
+void main() {
+	// Student: modify position. You'll need to copy it to a
+	// temporary vector and modify the temporary.
+	vec3 tempPosition = position;
+	vec3 tempNormal = normal;
+	// ZPOS = sqrt(uSphereRadius2 - XPOS^2 - YPOS^2) -  sqrt(uSphereRadius2)
+	tempPosition.z = sqrt(uSphereRadius2 - (tempPosition.x*tempPosition.x) - (tempPosition.y*tempPosition.y));
+	tempNormal = tempPosition;
+	tempPosition.z -= sqrt(uSphereRadius2);
+	// Don't forget to use this temporary in the rest of the shader.
+	gl_Position = projectionMatrix * modelViewMatrix * vec4( tempPosition, 1.0 );
+	vNormal = normalize( normalMatrix * tempNormal );
+	vec4 mvPosition = modelViewMatrix * vec4( tempPosition, 1.0 );
+	vViewPosition = -mvPosition.xyz;
+}
+```
+
+* we first set the z on the sphere. set the shading normal and then and AFTER we  Offset the surface so the center stays in view
+
+### 6.Quiz:Sharp Specular
+
+* [thresholding](https://en.wikipedia.org/wiki/Thresholding_(image_processing)
+* [beyond prog shading](http://bps12.idav.ucdavis.edu/)
+* One thing about Blinn-Phong Specular Highlighting is that the drop-off is always gradual around the fringe. even if highlight is at max we still see the dropoff. we also cant control the width of the highlight. Our task in this exercise is to threshold the blinn-phong specular term *if specular < uDropoff set it to 0 else 1* after computing the specular contribution
+
+```
+	// Student: add test here, when specular < uDropoff, set to 0.0, else to 1.0
+	if (specular < uDropoff) {
+		specular = 0.0;
+	} else {
+		specular = 1.0;
+	}
+
+```
+
+### 7.Quiz:Wrap Lighting
+
+* The article that talks about wrap lighting is Real-Time Approximations to Subsurface Scattering.
+* a cheap technique to give a material a slightly different look is to use wrap lighting. Like we did with Toon Rendering, we shifted where the diffuse term goes from light to dark. we can do the same shift with diffuse term but not just thresholding the bal. 
+* our task is to change the diffuse term to be this warp lighting term *max of (NdotL + Wrap)/(1+wrap) and 0*
+
+```
+	// Diffuse: N * L.
+	// Student: modify diffuse here with wrap equation. Wrap is passed in as "uWrap".
+	float diffuse = max( (dot( normal, lVector)+uWrap)/(1.0+uWrap), 0.0 );
+```
