@@ -2837,6 +2837,7 @@ material.color.setHSL( 0.09, 0.46, 0.8 );
 
 * same as specular mapping. we set the image texture to be the environment map of the teapot
 
+```
 	var path = txrpath + "media/img/cs291/textures/skybox/";
 	var urls = [path + "px.jpg", path + "nx.jpg",
 				path + "py.jpg", path + "ny.jpg",
@@ -3404,3 +3405,154 @@ void main() {
 	// Student: modify diffuse here with wrap equation. Wrap is passed in as "uWrap".
 	float diffuse = max( (dot( normal, lVector)+uWrap)/(1.0+uWrap), 0.0 );
 ```
+
+## Lesson 21
+
+### Introduction
+
+* [minecraft vogel demo](http://maxogden.github.io/voxel-engine/) [blog](https://maxogden.com/) [git](https://github.com/danfinlay/voxel-walk)
+* [dat.gui](https://github.com/dataarts/dat.gui)
+* [chase camera](http://stemkoski.github.io/Three.js/#Chase-Camera) [multicam demo](http://stemkoski.github.io/Three.js/#Multiple-Cameras)
+* in 3JS its easy to hook up events from mouse, keys etc (see Javascript)
+* up to now we had almost no interaction with the virtual world. the only direction was to move the camera.
+* with animation we add a forth dimension . time
+
+### Events
+
+* [w3 dom events](https://www.w3schools.com/jsref/dom_obj_event.asp)
+* look in three.js repo for *addEventListener*
+* [file search utils](https://www.mythicsoft.com/)
+* direct interaction is handled using events. event is generated on user interaction or by the system.
+* mouse click event `document.addEventListener('mousedown', onDocumentMouseDown, false);` onDocumentMouseDown is an async callback function
+
+```
+function onDocumentMouseDown(event) {
+	event.preventDefault(); // disables default behaviour like page refresh
+}
+```
+
+### Demo.Picking
+
+* [three.js demo picking blocks](https://threejs.org/examples/#canvas_interactive_cubes). non webgl demo
+
+### Picking
+
+```
+function onDocumentMouseDown(event) {
+	var mouseVector = new THREE.Vector3(
+		2* (event.clientX / canvasWidth) -1,
+		1 - 2 * (event.clientY / canvasHeight));
+	var projector = new THREE.Projector();
+	var raycaster = projector.pickingRay(mouseVector.clone(), camera);
+}
+```
+
+* the previous demo performed 2 actions. 
+	* selecting the object clicked on
+	* and if an object was found it was modified and the point clicked on was highlighted.
+* picking objects on the screen with a mouse is simple in 3JS.
+* in the code above we see the first half ogf the event callback that sets up to do the picking.
+* the code fires a ray from the eye into the world. this is a common way to do picking.
+* WebGL is focused on rendering. has no real support for interaction or picking. the program will figure out.
+* To form a ray from the eye through the screen we need two points. first is the eye position in the world space. the second is a point on screen wherever the user clicked the mouse. what we want to know is THIS POINTS Location in WORLD SPACE. 
+* To do so we need to travel upstream back along the chain of transformations => W P V *->world<-* M Object. Window coordinates to normalized device coordinates to view to WORLD Coordiantes. 3JS makes this easy
+* The 2D point from the MouseEvent is a document object model screen coordinate. this is like a WebGL Window Coordinate only that y 0,0 is on the tope left edge of the screen
+* THe mouse vector code converts from this screen into normalized device coordinates NDC which goes from -1 to 1 in x and y. Z val does not really matter. any value of z from -1 to 1 will form a point on the ray.
+* We next create a projector object. its beeter to create this object at initialization. the final line at our code snippet takes the NDC coordinate and forms a rayCaster object from it. 
+* Raycasting is like raytracing except that we only trace rays from the eye into the scene and no further. no new rays are spawn from interections.
+* when we have the raycaster object we can perform picking or hit testing. see code below
+
+```
+// hit testing
+var intersects = raycaster.intersectObjects(objects);
+if(intersects.length > 0) {
+	intersects[0].object.material.color.setRGB(Math.random(), Math.random(),Math.random());
+	// add sphere
+	var sphere = new THREE.Mesh( sphereGeom, sphereMaterial);
+	sphere.position = intersects[0].point;
+	scene.add(sphere);
+}
+```
+
+* we feed a list of objects to the raycaster and it returns an array of intersections. the intersections are listed front to back.
+* the intersection has info about the ray hit: object, face, faceIndex, distance, point. we use object parameter to change material to randomcolor. to show the point we draw a sphere around it.
+
+### Dragging
+
+* once we pick an object we might want to drag it to a new position. it is a more difficult process as we have to respond to mouse move and mouse self events.
+* the main question of dragging in 3D space is how to constrain the third dimension. one approach is to constrain the movement to be parallel to the screen surface. the other method is to limit the movement of the objecct to be on a world plane or other geometry on scene. for example. if you drag a handle on a face of a box to resize it we  limit interaction to be along the faces normal direction
+* beyond the keyboard and mouse combinations (double click, shift, ctrl keys) there are also different forms of selection. in areas like real time strategy games and CAD programs we can select a set of object by drawing a rectangle around them on screen.
+* this kind of selection is done by fonding which objects are fully or partially inside whats essentially a smaller frustum on the screen.
+* lass selection lets us draw arbitrary shape . these are not part of 3JS.
+* we dont have to select visible pobjects . eg to position directinal light we might put an invisible sphere in the scene and make it selectable. when a user clicks on the sphere determines apoint in space(where light comes from)
+* end of interaction (wtf?) now we wil talk abut animation
+
+### The Rendering Loop
+
+* [requestAnimationFrame](https://www.paulirish.com/2011/requestanimationframe-for-smart-animating/)
+* we have initialized our scene with lights objects and camera. naturally next step is to render. `renderer.render(scene,camera);`
+* its not uncommon to render the scene once at initialization. sometimes we need to update the scene at runtime. 
+* once scen is setup calling animate function does the trick with the requestAnimateFrame() method.
+
+```
+function animate() {
+	windw.requestAnimationFrame(animate);
+	render();
+}
+```
+* this method will start up rendering when it makes sense to. it also eases the GPU usage. if we switch tabs in browser it will pause the program. animate emthod calls render() to render the scene and much more.
+
+```
+function render() {
+	var delta = clock.getDelta();
+	cameraControls.update(delta);
+	renderer.render(scene,camera);
+}
+```
+
+* in render() we put code that does changes before rendering the scene, chang eposition of a ball, use a gui param etc.
+
+### Incremental Animation
+
+* [performance penalty when adding to object](https://www.youtube.com/watch?v=UJPdhx5zTaw) [use strict](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode)
+
+* Lets get animating, putting sthing in the render method to make our drnk bird move.
+* geometry has been organized to facilitate animation. bird has been split in two parts. the static support(legs feet prg) and the animated bird (body head hat). the bodyhead is a new Object3D.
+* next we do sthing javascript allows . add a param at an object at runtime.
+we do this to access it in render.
+
+```
+var bodyhead = new THREE.Object3D();
+bodyhead.add(body);
+bodyhead.add(head);
+
+// add field fror animated part, for simplicity
+bbird.animated = bodyhead;
+
+bbird.add(support);
+bbird.add(bodyhead);
+```
+
+* if we do spelling errors while assigning new params we get nasty bugs.
+* in the code below animation happens. we want to rotate the body around the z axis the crossbar. we use tiltDirection param. it can be 1 or -1. if it is 1 the rotation increases by a small amount at each render. when it reaches max angle direction changes to -1 and rotation decreases by an amount.
+
+```
+var titltDirection = 1;
+
+function render(){
+	bird.animated.rotation.z += tiltDirection * 0.5 * Math.PI/180;
+	if (bird.animated.rotation.z > 103 * Math.PI/180){
+		// backwards
+		tiltDirection = -1;
+		bird.animated.rotation.z = 2*(103*Math.PI/180) -bird.animated.rotation.z;
+	} else if (bird.animated.rotation.z < -22 * Math.PI/180){
+		// forward
+		tiltDirection = 1;
+		bird.animated.rotation.z = 2*(-22*Math.PI/180) -bird.animated.rotation.z;
+	}
+
+	renderer.render(scene,camera);
+}
+```
+
+* we would like to see the bird rotating around the crossbar. but with the code above the bird rotates around the origin. we havent set a pivot point for the body at the crossbar.
