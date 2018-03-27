@@ -3556,3 +3556,151 @@ function render(){
 ```
 
 * we would like to see the bird rotating around the crossbar. but with the code above the bird rotates around the origin. we havent set a pivot point for the body at the crossbar.
+
+### Quiz:Set the Pivot
+
+* our task in this exercise is to set the pivot point for the head and body of the drinking bird to be at the crossbar. this has to do with the order of transforms, translate and then rotate. but its not that simple. birds body and head are in correct spot. what if we move the fram of reference to the crossbar. then put all in an object and move the parent to the location after doing the rotation
+* our task is to modify the createDrinkingBird method so that the pivot is correct, we get the pivot height. also it should take us just 3 lines of code to do it
+* order of operations: translate body and head so that crossbar is at origin -> rotate (done with render() method) and then translate body and head back to start
+* we might want to add an intermediate object a bodyhead. its cleaner to apply a translation to this object
+
+```
+	// Student: change pivot point
+	// pivotHeight is the height of the crossbar
+	var pivotHeight = 360;
+	bodyhead.position.y = -pivotHeight;
+	var animated = new THREE.Object3D();
+	animated.add(bodyhead);
+	// add field for animated part, for simplicity
+	bbird.animated = animated;
+	animated.position.y = +pivotHeight;
+	bbird.add(support);
+	bbird.add(animated);
+```
+
+* we translate
+* then add to a new object se this as animated and translate it back
+
+### Step Size
+
+* in the previous demo we base aour animation on the frames rendered. each frame rotates the bird half a degree. so depnding on the framerate on each machine the motion looks different. if we say sync animation with voice or music this does not work
+* we want to use real time to decide rotation
+
+### Timed animation
+
+* the funstion getDelta() returns the ms that elapsed since the clock was created or last time getDelta() was called
+
+```
+var clock new THREE.Clock();
+
+function render() {
+	var delta = clock.getDelta();
+};
+```
+
+* so taking the time lapse between frames we can take them into account in the angle calculation and move from a fixed step size `bird.animated.rotation.z += tiltDirection * 0.5 *Math.PI/180;` to a clock controlled step (angle) `bird.animated.rotation.z = tiltDirection*30*delta*Math.PI/180;`
+* if we hide the page and open later the delta is huge and animation gets craz
+* the `getElapsedTime() returns the elapsed time since the creation of clock. we want 30 degrees per second so we multiply it by 30`. we have 250 degrees of freedom so we dive this val with modulo 250
+
+```
+var angle = (30*clock.getElapsedTime()%250;
+if(angle < 125) {
+		// go from -22 to 103 degrees
+		bird.animated.rotation.z = (angle - 22)*Math.PI/180;
+	} else {
+		// go back from 103 to -22 degrees
+		bird.animated.rotation.z = ((250 - angle) - 22)*Math.PI/180;
+	}
+```
+
+### Motion Capture
+
+* [wiki](https://en.wikipedia.org/wiki/Motion_capture)
+* [head capture demo](http://learningthreejs.com/blog/2013/03/12/move-a-cube-with-your-head/)
+* [motion capture db 1](http://resources.mpi-inf.mpg.de/HDM05/)
+
+### Motion capture 
+
+* even for a single angle of freedom like in the drinking bird it is difficult to do motion capture. motion capture is done tracking points (like balls) with various special cameras. the transformmatrixes that are derived are applied to 3d objects
+
+### Keyframing
+
+* [tween.js](http://learningthreejs.com/blog/2011/08/17/tweenjs-for-smooth-animation/)
+* [demo](http://learningthreejs.com/data/tweenjs_for_smooth_animation/tweenjs_for_smooth_animation.html)
+* [blender export](http://www.96methods.com/2012/02/three-js-very-basic-animation/)
+* [greensock animation lib](http://www.kadrmasconcepts.com/blog/2012/05/29/greensock-three-js/)
+* [wiki](https://en.wikipedia.org/wiki/Key_frame)
+* [math for game prog](http://www.essentialmath.com/tutorial.htm)
+* [threefab](https://github.com/blackjk3/threefab)
+* [export blender to threefab](http://www.kadrmasconcepts.com/blog/2012/01/24/from-blender-to-threefab-exporting-three-js-morph-animations/)
+* [tool](http://blackjk3.github.io/threefab/)
+* the principle of keyframing is this. save the state of an object at various times and interpolate between these
+* if i have an object at postionA at Time=A and positionB at Time=B the time function of its position between timea and b is position(time=T)=(B-T)/(B-A) * positionA + (T-A)/(B_A) * positionB
+* the process of generatiing these frames between the key frames is called tweening
+* with the drinkbird we can do the same say at A is at the Down position and B is in Up position abd say it takes 2sec to go up (A-B) and 3sec to go down (B-A). we canno concider the second pass from A down move as A as the ya re differently placed in time . we call it C. between C and A we have a pause of 0.5s.so A-B=2s B-C=3s C-A=0.5s A and C are down and B is Up . we make a graph of angle vs Time. what we see is that the pass from B is abnormal is a peak. is not natural. this is the effect of linear interpolation
+* to make it natural and smooth we use spline curves (tween.min.js)
+
+### Keyfrafe Example
+
+* using threefab we can see how with a few keyframes we can achieve elaborate motions
+
+### Demo:Three.js Tween library
+
+* demo code using tween
+
+```
+// TWEEN
+	// tutorial: http://learningthreejs.com/blog/2011/08/17/tweenjs-for-smooth-animation/
+	var updateBird = function(){
+		bird.animated.rotation.z = current.z;
+	};
+	var current = { z: 0 };
+
+	var drinkingRotation = { z: 103 * Math.PI/180 };
+	var backRotation = { z: -22 * Math.PI/180 };
+	var wobbleRotation = { z: 22 * Math.PI/180 };
+	var back2Rotation = { z: -8 * Math.PI/180 };
+
+	var tweenForward = new TWEEN.Tween(current).to(drinkingRotation, 3000 );
+	tweenForward.onUpdate(updateBird);
+	tweenForward.easing(TWEEN.Easing.Cubic.In);
+
+	// don't do anything: drink
+	var tweenPause = new TWEEN.Tween(current).to(drinkingRotation, 500 );
+	tweenPause.onUpdate(updateBird);
+
+	var tweenBackward = new TWEEN.Tween(current).to(backRotation, 1200);
+	tweenBackward.onUpdate(updateBird);
+	tweenBackward.easing(TWEEN.Easing.Quadratic.InOut);
+
+	var tweenWobble = new TWEEN.Tween(current).to(wobbleRotation, 1000);
+	tweenWobble.onUpdate(updateBird);
+	tweenWobble.easing(TWEEN.Easing.Quadratic.InOut);
+
+	var tweenBackward2 = new TWEEN.Tween(current).to(back2Rotation, 900);
+	tweenBackward2.onUpdate(updateBird);
+	tweenBackward2.easing(TWEEN.Easing.Quadratic.InOut);
+
+	// have one call the other next, and back
+	tweenForward.chain( tweenPause );
+	tweenPause.chain( tweenBackward );
+	tweenBackward.chain( tweenWobble );
+	tweenWobble.chain( tweenBackward2 );
+	tweenBackward2.chain( tweenForward );
+
+	// get this chain going
+	tweenForward.start();
+```
+
+
+### Texture Animation
+
+* [tutorial](http://stemkoski.github.io/Three.js/#Texture-Animation)
+* is like a flip book when we draw an image in each page and we flip through them. also we can do it by transforming texture coordinates
+
+### Quiz.Flowing River
+
+* our job is to use the texture transform feature to  animate water as shown moving top to bottom, rate of movement is 1s per copy of texture, when the txeture repeat is 3 a texture will take 3s to move from top to bottom.
+* our time loop much bebased on thelapsed time in real world
+
+* solution
