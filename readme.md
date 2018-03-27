@@ -3703,4 +3703,60 @@ if(angle < 125) {
 * our job is to use the texture transform feature to  animate water as shown moving top to bottom, rate of movement is 1s per copy of texture, when the txeture repeat is 3 a texture will take 3s to move from top to bottom.
 * our time loop much bebased on thelapsed time in real world
 
-* solution
+* my solution
+
+```
+texture[effectController.mtlName].offset.set(0,clock.getElapsedTime()*effectController.repeat);
+```
+
+*teacher solution (think of modulo based on texture size)
+
+// add some wobble
+texture[effectController.mtlName].offset.set(
+    0.2*Math.sin(2*time), time );
+texture[effectController.mtlName].repeat.set( 
+    effectController.repeat, effectController.repeat/3 );
+
+### Quaternion Interpolation
+
+* [slerping](https://en.wikipedia.org/wiki/Slerp)
+* [rotations](http://www.essentialmath.com/GDC2012/GDC2012_JMV_Rotations.pdf)
+* quaternion represents orientation of an object, how is rotated
+* they do the same as angle rotations. they rotate a model around a givenaxis by an angle
+* they are used a lot in animation because we can interpolate easily between one orientation and another.
+* say we have to vectors poking through the sphere from the origin
+* if we use euler angles ther is gimbal lock as one angle is applied before the other. euler angles are terrible for interpolation aroundan arbitrary axis especially if the change is large
+* if we use axis/angle scheme (whole angle in 4 frames) we would go 1/4 angle anf formm new matrix. each number needs trogonometric functions as we have rotation over 2 axis
+* with quaternions we do it easily using axis-angle like matrixes that contain 4 values , numbers )
+* when we interpolate around an axis is called a SLERP (spherical linear interpolation). we move from 1 point in the sphere to another in a linerar fashion
+* in 3JS for angle/axis rotations we need traslation and scaling matrixes in the pipline. quaternions in 3js can be combined with other trasformation matrices . with the difference that quaternions have only 5 values
+* they are used in flycontrols.js
+* when we use quaternions with camera the camera up vector is not maintened and need to reorient
+
+### Skinning
+
+* [3JS skinning](https://threejs.org/examples/#webgl_animation_skinning_blending)
+* [skinning2](https://threejs.org/examples/#webgl_loader_collada_skinning)
+* [skinnign3](https://threejs.org/examples/#webgl_loader_sea3d_skinning)
+* [demo](http://alteredqualia.com/three/examples/webgl_animation_skinning_tf2.html)
+* [tutorial](https://threejs.org/examples/#webgl_skinning_simple)
+* a robot model has rigid elements  that do not change over time like forearm upper arm. at the joint the objects are clearly seperate.
+* at the joint we need to put some skin like some triangles connecting the two rigid pieces. as the joint beds these triangles deform and stretch always attached to the two arm pieces.
+* this doesnt look good,we would like a flexible tube that bends but keeps its shape. say we add such a joint with 3 cylinders one after the other. the uestion is how to move the cylinders as the joint bends.
+* solution is simple. each vertex is assigned a weight. the weight is how each rigig part position affects the vertex
+* this modelling process of adding  polygons and assigning weights is called skinning or verrtex blending.
+* the rigid parts of the body are called bones. the bones  combined form a skeleton so the whole area is called skeletal animation
+* this method has flaws like the inner arm where vertexes bend inwards
+* a vertex can be influences by more thins than 2 bones
+
+### Morphing 
+
+* [ginger demo](https://sv-ginger.appspot.com/)
+* [tutorial](http://stemkoski.github.io/Three.js/#Model-Animation-Control)
+* [skiining morphing](https://threejs.org/examples/#webgl_animation_skinning_morph)
+* [wiki](https://en.wikipedia.org/wiki/Morph_target_animation)
+* [loader](https://threejs.org/docs/#api/loaders/Loader)
+* [webgl loader](https://code.google.com/archive/p/webgl-loader/)
+* [3js faq](https://github.com/mrdoob/three.js/wiki)
+* morphing is the process of changing from one model to another model. if model differ considerably it is a difficult problem to solve
+* it simple to interpolate between 2 models with the same number of vertices. linear interpolation between these two  meshes is trivial
