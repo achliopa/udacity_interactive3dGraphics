@@ -3760,3 +3760,158 @@ texture[effectController.mtlName].repeat.set(
 * [3js faq](https://github.com/mrdoob/three.js/wiki)
 * morphing is the process of changing from one model to another model. if model differ considerably it is a difficult problem to solve
 * it simple to interpolate between 2 models with the same number of vertices. linear interpolation between these two  meshes is trivial
+* A more general approach uses what is called morph targets or key poses. e.g a smile can be neutral, happy or sad. to go from one to other we interpolate.
+key poses are like key frames. morph targets can be combined. skinned targets cab be morphed. 
+* it is laborious to create morph targets. the process of setting characters animation cotnrols is called Rigging. needs skill and time to do it. this works is always done with special SW. morphing stretches  the GPU
+
+### Introduction to Previsualization
+
+* interactive #d is used extensively in previsualization, in setting up the scen, (cameras objects, light in a virtual world). Interview with Third Floor (Previsualization company). They were founded for Star Wars III. the capture their motion capture suit [interview](https://www.youtube.com/watch?v=6vBx4Dm47iM)
+* they build a simple character
+* they rig it with their riggin system
+* there is no skinning to keep it fast
+* they set animation seq or do it with motion capture (they multiply the char)
+* they build location to large scale
+* they add effects (e.g simple images but scaled correctly)
+* they start controlling the camera (pan tilt, dolly shot), they add hand effect
+* they add green screen scales properly
+* they give a film plan to produces that follows how this was digitally filmed in virtual world
+
+### Particle Systems
+
+* [tutorial](http://creativejs.com/tutorials/three-js-part-1-make-a-star-field/)
+* [tutorial2](http://stemkoski.github.io/Three.js/#Particles)
+* [3js example1](https://threejs.org/examples/#webgl_custom_attributes_points2)
+* [3js example2](https://threejs.org/examples/#webgl_points_dynamic)
+* [500k demo](http://alteredqualia.com/three/examples/webgl_cubes_indexed.html)
+* [puff](http://jeromeetienne.github.io/tquery/www/live/editor/#U/../../../plugins/particles/examples/smokepuff.html)
+* [fuzzy particles](https://www.lri.fr/~mbl/ENS/IG2/devoir2/files/docs/fuzzyParticles.pdf)
+* particles can be used for all sorts of animations. objects can be formd of particles instead of triangles
+
+### Collision Detection and Response
+
+* [cannon.js](http://schteppe.github.io/cannon.js/)
+* [Phsijs](http://chandlerprall.github.io/Physijs/)
+* [tutorial](http://stemkoski.github.io/Three.js/#Collision-Detection)
+* [raycasting for collision](http://blog.webmaestro.fr/collisions-detection-three-js-raycasting/)
+* [RT rendering](http://www.realtimerendering.com/intersections.html)
+* collision detection is detection when 2 objects move and start to overlap
+* shooting rays from users location and finding intersections distance will reveal wheter users position should be readjusted
+* when we have many objects brutforce means comapare everything with everything on scene
+* smart collistion detection is about datastraucts that quickly call out possible collisions in a frame
+* next thing is what to do if we find out collision. it has to do with object spped and elasticity
+
+### Simulation 
+
+* [physical sim](http://www.glowscript.org/)
+* [phys anumation](http://www.physicsbasedanimation.com/)
+* for simple physic simulations keyfframing suffice (bounsing ball)
+* for complex we go to simulation
+* [nucleus dynamic solver](https://d2f99xq7vri1nk.cloudfront.net/legacy_app_files/pdf/nucleus.pdf)
+* [ncloth maya](http://www.cgsociety.org/index.php/CGSFeatures/CGSFeatureSpecial/stam_on_mayas_ncloth)
+* [cloth](http://www.cs.cmu.edu/~baraff/sigcourse/)
+* simulations use physics formulas found in physics and engineering textbooks
+	* flow
+	* friction
+	* drag
+	* elasticity
+	* tension
+	* turbulence
+	* heat transfer
+	* drag, lift, stretch
+* simulations work by a small timeframe, smaller than the time represented by a frame, small steps, time after time. 
+* if interactive speed is not needed time slices can be very small
+* for interactive rendering we do simplification
+* a cloth can be a realtime simulatio (created -viewed). complex ones can be stored at object location, these stored locations can be treated as morph targets
+
+### Quiz: What Kind of System
+
+* Frwning troll => morph target
+* avalanche => simulation
+* fymnastic flip => motion capture
+* show right hand rule with hand => sceletal animation
+
+### Level of Detail
+
+* [demo](https://threejs.org/examples/#webgl_lod)
+* [fps meter](http://beautifulpixels.blogspot.gr/2013/03/chromes-fps-histogram.html)
+* [book](http://www.lodbook.com/)
+* [virtual textures](http://www.jurajobert.com/data/Virtual_Texturing_in_Software_and_Hardware_course_notes.pdf)
+* [quadrics](https://mgarland.org/research/quadrics.html)
+* [meshlab](http://www.meshlab.net/)
+* how to change object representatin as its size on screen changes
+* perform VS quality tradeoff
+* affects meshes and textures
+* textures: down sample (various versions prder of 2mip chain )
+* memory constrains 
+* smaller object? simplify illumination equation
+* object smaller? displacement map => normal map => nop map
+* object smaller ? fewer vertexes (decimation algorithm)
+* if models differ considerabley we see a pop
+
+### QUiz:Edge Collapse
+
+* LoD method, vertex moves along an edge to be at the same loc as another vertex (thgen store only 1) we save 3 edges, 2 faces => Euler -Poincare Formula
+V+F-E+2G=2 (V:Vertices, F:faces, E:edges, G:genus) genus is number of holes in object. sphere, cude (genus 0) donut (genus 1). in our example if we create avertex in agenus 0 obj we have 1 + 2 -3  + 0 no holes created . the delta is 0 so the formula holds always
+
+### Terrain Demo LoD System
+
+* [demo](http://www.zephyrosanemos.com/)
+* [bufferGeom](https://www.youtube.com/watch?v=qx40CRwwkS8&t=15m43s)
+* [horizon culling](http://blogs.agi.com/insight3d/index.php/2009/03/25/horizon-culling-2/)
+
+### Biggest Challenge
+
+* Performance per Watt
+
+### The End
+
+* [webGL](http://acko.net/blog/on-webgl/)
+* [mathbox](http://acko.net/blog/making-mathbox/)
+* [learnwbgl](http://learningwebgl.com/blog/)
+* [mrdoob](https://www.youtube.com/watch?v=qx40CRwwkS8)
+
+## Lesson 22 - Final Exam
+
+
+### 1.Quiz:Mix & Match
+
+* 
+
+### 2.Quiz:Dot & Cross Products
+
+*
+
+### 3.Quiz:Vertex & Fragment Shader
+
+*
+
+### 4.Quiz:Which is Different
+
+*
+
+### 5.Quiz:Volume Lighting
+
+*
+
+### 6.Quiz:Pipeline
+
+*
+
+### 7.Quiz:Normal Computation
+
+*
+
+### 8.Quiz:Perspective vs Orthographic
+
+*
+
+### 9.Quiz:What's Hardwired
+
+*
+
+### 10.Quiz:Brightest Illumination
+
+*
+
+
