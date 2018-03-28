@@ -185,7 +185,7 @@ function render() {
 	// Student:
 	// Transform the texture here to move downwards at
 	// a rate of one copy of the texture per second.
-
+	texture[effectController.mtlName].offset.set(0,clock.getElapsedTime()*effectController.repeat);
 	renderer.render(scene, camera);
 }
 
